@@ -31,7 +31,9 @@ const GalleryData = {
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (data && !error) {
+        if (error) {
+          console.warn('Supabase query error (table may not exist yet):', error.message);
+        } else if (data && data.length > 0) {
           return data.map(item => ({
             id: item.id,
             src: item.image_url,
@@ -40,8 +42,9 @@ const GalleryData = {
             note: item.note || ''
           }));
         }
+        // Table exists but is empty, or query succeeded with 0 rows
       } catch (e) {
-        console.log('Supabase load failed, using localStorage:', e);
+        console.warn('Supabase load failed, using localStorage:', e.message || e);
       }
     }
     

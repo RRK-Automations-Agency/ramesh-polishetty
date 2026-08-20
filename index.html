@@ -236,9 +236,18 @@
   /* Load hero photos dynamically from Supabase gallery */
   async function loadHeroPhotos() {
     if (!window.GalleryData) return;
-    const items = await window.GalleryData.load();
-    const withSrc = items.filter(function(i) { return i.src && i.src.length > 0; });
-    if (!withSrc.length) return;
+    var items;
+    try {
+      items = await window.GalleryData.load();
+    } catch (e) {
+      console.log('Hero: could not load gallery:', e);
+      return;
+    }
+    var withSrc = items.filter(function(i) { return i.src && i.src.length > 0; });
+    if (!withSrc.length) {
+      console.log('Hero: no photos uploaded yet — showing placeholders');
+      return;
+    }
 
     var heroFrame = document.querySelector('.hero-art .frame');
     var heroPhotos = document.getElementById('hero-photos');
@@ -266,8 +275,18 @@
       }
     }
   }
+
   document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(loadHeroPhotos, 500);
+    /* Wait for gallery.js to init Supabase, then load hero photos */
+    function waitForGallery(retries) {
+      retries = retries || 0;
+      if (window.GalleryData && window.GalleryData.load) {
+        loadHeroPhotos();
+      } else if (retries < 20) {
+        setTimeout(function() { waitForGallery(retries + 1); }, 250);
+      }
+    }
+    waitForGallery();
   });
 </script>
 </body>

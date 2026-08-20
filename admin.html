@@ -132,18 +132,30 @@
 <script src="js/admin.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
-    if (window.loadConfig) await window.loadConfig();
-    if (window.initSupabase) await window.initSupabase();
-
+    // Show badge immediately
     const badge = document.getElementById('auth-badge');
-    if (badge && window.Auth) {
-      const mode = window.Auth.getAuthMode();
-      if (mode === 'supabase') {
+    if (badge) {
+      badge.className = 'auth-badge offline';
+      badge.innerHTML = '\uD83D\udcbe Connecting...';
+    }
+
+    // Load config + init Supabase
+    try {
+      if (window.loadConfig) await window.loadConfig();
+    } catch (e) { console.error('Config load error:', e); }
+    try {
+      if (window.initSupabase) await window.initSupabase();
+    } catch (e) { console.error('Supabase init error:', e); }
+
+    // Update badge with final status
+    if (badge) {
+      const isOnline = window.isConfigValid && window.isConfigValid();
+      if (isOnline) {
         badge.className = 'auth-badge cloud';
-        badge.innerHTML = '\u2601\ufe0f <strong>Cloud Mode</strong> \u2014 Authenticated via Supabase';
+        badge.innerHTML = '\u2601\ufe0f <strong>Cloud Mode</strong> \u2014 Enter your Supabase email & password, or any email/password for offline mode.';
       } else {
         badge.className = 'auth-badge offline';
-        badge.innerHTML = '\uD83D\udcbe <strong>Offline Mode</strong> \u2014 First login creates admin account. For cloud, set up Supabase Auth.';
+        badge.innerHTML = '\uD83D\udcbe <strong>Offline Mode</strong> \u2014 Enter any email & password (6+ characters). An offline admin account will be created.';
       }
     }
   });

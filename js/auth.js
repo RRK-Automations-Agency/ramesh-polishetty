@@ -237,28 +237,8 @@ const Auth = {
         });
 
         if (error) {
-          // If user not found, fall through to offline mode
-          const errMsg = error.message || '';
-          if (errMsg.includes('Invalid login credentials') || 
-              errMsg.includes('User not found') ||
-              errMsg.includes('Invalid email')) {
-            console.log('Supabase: user not found, trying offline mode');
-          } else {
-            // Real error (rate limit, network, etc.)
-            this.recordFailedAttempt();
-            const { attempts } = this.getRateLimit();
-            const remaining = this.MAX_ATTEMPTS - attempts;
-            
-            if (remaining <= 0) {
-              return {
-                error: 'Account locked due to too many failed attempts. Please try again later.'
-              };
-            }
-            
-            return {
-              error: `Authentication error: ${errMsg}. ${remaining} attempts remaining.`
-            };
-          }
+          // Always fall through to offline mode on ANY Supabase error
+          console.log('Supabase auth error:', error.message, '— trying offline mode');
         } else if (data && data.user) {
           // Success with Supabase
           this.resetAttempts();
@@ -350,12 +330,12 @@ const Auth = {
       return false;
     }
 
-    // If offline mode, just check session exists
+    // Offline mode — session exists and hasn't expired
     if (session.isOffline) {
       return true;
     }
 
-    // If Supabase is configured, verify server-side
+    // Supabase mode — verify the server-side session is still valid
     if (window.getSupabaseClient && window.getSupabaseClient()) {
       try {
         const client = window.getSupabaseClient();
@@ -366,11 +346,7 @@ const Auth = {
           return false;
         }
         
-        // Check if user has admin role
-        const isAdmin = user.email === 'admin@rameshpolisetty.com' || 
-                       user.user_metadata?.role === 'admin';
-        
-        return isAdmin;
+        return true;
       } catch {
         return false;
       }
