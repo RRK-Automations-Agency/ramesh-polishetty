@@ -4,6 +4,10 @@
    Uses Supabase Auth for authentication (no hardcoded passwords).
    ============================================================ */
 
+/* ---------- DOM helpers (main.js not loaded on admin page) ---------- */
+const $  = (s, c) => (c || document).querySelector(s);
+const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
+
 /* ---------- login gate ---------- */
 function isLoggedIn() { return window.Auth && window.Auth.isLoggedIn(); }
 function setLoggedIn(v) {

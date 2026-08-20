@@ -58,6 +58,12 @@ function isConfigValid() {
 let supabaseClient = null;
 
 async function initSupabase() {
+  // Already initialized — skip
+  if (supabaseClient) {
+    console.log('✅ Supabase client already initialized');
+    return true;
+  }
+  
   // Load config first
   if (!configLoaded) {
     await loadConfig();
