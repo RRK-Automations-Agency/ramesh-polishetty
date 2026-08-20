@@ -158,9 +158,10 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
 }
 .brand span{ color:var(--accent-light); }
 .brand i{ font-style:normal; color:var(--text); }
-.nav-links{ display:flex; gap:4px; list-style:none; }
+.nav-links{ display:flex; gap:2px; list-style:none; flex-wrap:nowrap; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none; }
+.nav-links::-webkit-scrollbar{ display:none; }
 .nav-links a{
-  padding:8px 13px; border-radius:9px; font-size:14px; font-weight:500;
+  padding:8px 10px; border-radius:9px; font-size:13px; font-weight:500; white-space:nowrap;
   color:var(--muted); transition:color .2s, background .2s;
 }
 .nav-links a:hover{ color:var(--text); background:rgba(255,255,255,.05); }
@@ -200,7 +201,7 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
   padding:150px 0 70px;
   position:relative;
 }
-.hero-grid{ display:grid; grid-template-columns:1.25fr .75fr; gap:48px; align-items:center; }
+.hero-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center; }
 .hero h1{
   font-family:var(--font-head);
   font-weight:800;
@@ -237,7 +238,7 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
   font-family:var(--font-head); font-weight:800; font-size:clamp(80px, 11vw, 140px);
   color:rgba(255,255,255,.10); letter-spacing:.05em; user-select:none;
 }
-.hero-art .frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.hero-art .frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top center; }
 .hero-art .ring{
   position:absolute; inset:-14px; border:1px dashed rgba(30,58,138,.5);
   border-radius:calc(var(--radius) + 14px); pointer-events:none;
@@ -259,9 +260,12 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
   grid-template-columns:repeat(2, 1fr);
   gap:12px;
 }
+.hero-photos:has(> :only-child){
+  grid-template-columns:1fr;
+}
 .hero-photos img{
   width:100%;
-  aspect-ratio:1;
+  aspect-ratio:16/10;
   object-fit:cover;
   border-radius:12px;
   border:1px solid var(--line-2);
