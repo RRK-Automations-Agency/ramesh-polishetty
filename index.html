@@ -65,15 +65,13 @@
     </div>
     <div class="hero-art">
       <div class="frame">
-        <img id="hero-photo" src="photos/hero.jpg" alt="Ramesh Polisetty"
-             onerror="this.style.display='none';var f=document.getElementById('hero-photo-fb');if(f){f.style.display='grid';}" />
-        <div id="hero-photo-fb" class="monogram" style="display:none;">RP</div>
+        <div id="hero-photo-fb" class="monogram">RP</div>
       </div>
       <div class="ring"></div>
       <div class="hero-tag">Build · Transform · Maintain</div>
-      <div class="hero-photos">
-        <img src="photos/training.jpg" alt="Ramesh Polisetty - Training" onerror="this.style.display='none';" />
-        <img src="photos/coach.jpg" alt="Ramesh Polisetty - Coach" onerror="this.style.display='none';" />
+      <div class="hero-photos" id="hero-photos">
+        <div class="hero-photo-placeholder"><div class="pico">📸</div></div>
+        <div class="hero-photo-placeholder"><div class="pico">📸</div></div>
       </div>
     </div>
   </div>
@@ -234,5 +232,43 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/main.js"></script>
 <script src="js/gallery.js"></script>
+<script>
+  /* Load hero photos dynamically from Supabase gallery */
+  async function loadHeroPhotos() {
+    if (!window.GalleryData) return;
+    const items = await window.GalleryData.load();
+    const withSrc = items.filter(function(i) { return i.src && i.src.length > 0; });
+    if (!withSrc.length) return;
+
+    var heroFrame = document.querySelector('.hero-art .frame');
+    var heroPhotos = document.getElementById('hero-photos');
+
+    /* Main hero image — use the first photo with a source */
+    var mainPhoto = document.createElement('img');
+    mainPhoto.src = withSrc[0].src;
+    mainPhoto.alt = withSrc[0].label || 'Ramesh Polisetty';
+    mainPhoto.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;';
+    var fb = document.getElementById('hero-photo-fb');
+    if (fb) fb.style.display = 'none';
+    heroFrame.insertBefore(mainPhoto, heroFrame.firstChild);
+
+    /* Bottom photo strip — use next 2 photos */
+    if (heroPhotos && withSrc.length > 1) {
+      heroPhotos.innerHTML = '';
+      var showCount = Math.min(withSrc.length - 1, 2);
+      for (var j = 0; j < showCount; j++) {
+        var photo = document.createElement('img');
+        photo.src = withSrc[j + 1].src;
+        photo.alt = withSrc[j + 1].label || 'Ramesh Polisetty';
+        photo.loading = 'lazy';
+        photo.onerror = function() { this.style.display = 'none'; };
+        heroPhotos.appendChild(photo);
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(loadHeroPhotos, 500);
+  });
+</script>
 </body>
 </html>

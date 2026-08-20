@@ -279,6 +279,15 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
   .hero-photos{ max-width:400px; margin-inline:auto; }
 }
 
+/* Hero photo placeholder */
+.hero-photo-placeholder{
+  width:100%; aspect-ratio:1;
+  display:grid; place-items:center;
+  background:linear-gradient(155deg, rgba(30,58,138,.2), rgba(30,58,138,.1));
+  border-radius:12px; border:1px solid var(--line-2);
+  color:var(--muted); font-size:28px;
+}
+
 /* ============================================================
    TICKER
    ============================================================ */

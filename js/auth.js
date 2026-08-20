@@ -162,7 +162,7 @@ const Auth = {
       return { 
         success: true, 
         user: { email: email, isOffline: true },
-        message: 'Admin credentials created. Remember your password!'
+        message: 'Offline admin account created! For cloud storage, create a user in Supabase Dashboard > Authentication > Users.'
       };
     }
 
@@ -237,26 +237,34 @@ const Auth = {
         });
 
         if (error) {
-          this.recordFailedAttempt();
-          const { attempts } = this.getRateLimit();
-          const remaining = this.MAX_ATTEMPTS - attempts;
-          
-          if (remaining <= 0) {
+          // If user not found, fall through to offline mode
+          const errMsg = error.message || '';
+          if (errMsg.includes('Invalid login credentials') || 
+              errMsg.includes('User not found') ||
+              errMsg.includes('Invalid email')) {
+            console.log('Supabase: user not found, trying offline mode');
+          } else {
+            // Real error (rate limit, network, etc.)
+            this.recordFailedAttempt();
+            const { attempts } = this.getRateLimit();
+            const remaining = this.MAX_ATTEMPTS - attempts;
+            
+            if (remaining <= 0) {
+              return {
+                error: 'Account locked due to too many failed attempts. Please try again later.'
+              };
+            }
+            
             return {
-              error: 'Account locked due to too many failed attempts. Please try again later.'
+              error: `Authentication error: ${errMsg}. ${remaining} attempts remaining.`
             };
           }
-          
-          return {
-            error: `Invalid credentials. ${remaining} attempts remaining.`
-          };
+        } else if (data && data.user) {
+          // Success with Supabase
+          this.resetAttempts();
+          this.setSession(data.user);
+          return { success: true, user: data.user };
         }
-
-        // Success with Supabase
-        this.resetAttempts();
-        this.setSession(data.user);
-        
-        return { success: true, user: data.user };
       } catch (err) {
         console.error('Supabase login error:', err);
         // Fall through to offline mode
@@ -264,7 +272,7 @@ const Auth = {
     }
 
     // Fallback to offline mode
-    console.warn('Supabase not available, using offline mode');
+    console.warn('Using offline mode for authentication');
     return this.offlineLogin(email, password);
   },
 
