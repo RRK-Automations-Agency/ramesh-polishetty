@@ -57,12 +57,13 @@ supabase/.temp/
 *.backup
 *.sql.bak
 
-# Photos (large files, use Supabase Storage instead)
-photos/*.jpeg
-photos/*.jpg
-photos/*.png
-photos/*.gif
-photos/*.webp
+# Admin-uploaded photos (stored in Supabase, not git)
+# Hero photos (hero-1.jpeg, hero-2.jpeg) ARE committed intentionally
+photos/WhatsApp*
+photos/IMG*
+photos/DCIM*
+photos/Snap*
+photos/Screenshot*
 
 # Vercel
 .vercel/

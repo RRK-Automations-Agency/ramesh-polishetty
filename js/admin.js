@@ -34,17 +34,10 @@ function processImage(file) {
   });
 }
 
-/* ---------- storage meter ---------- */
+/* ---------- storage info (Supabase) ---------- */
 function updateMeter() {
-  const { used, total } = GalleryData.usage();
-  const pct = Math.min(100, Math.round((used / total) * 100));
-  const bar = $("#meter-bar");
-  if (bar) {
-    bar.style.width = pct + "%";
-    bar.classList.toggle("warn", pct > 75);
-  }
   const label = $("#meter-label");
-  if (label) label.textContent = "Storage: " + (used / 1048576).toFixed(1) + " MB of ~5 MB used.";
+  if (label) label.textContent = "Photos are stored in Supabase cloud storage — no local limits.";
 }
 
 /* ---------- update supabase status ---------- */
@@ -109,7 +102,7 @@ async function renderList() {
   });
 }
 
-/* ---------- upload ---------- */
+/* ---------- upload (Supabase only) ---------- */
 async function handleUpload(files) {
   const label = $("#a-label").value.trim() || "Transformation photo";
   const cat   = $("#a-cat").value;
@@ -117,65 +110,40 @@ async function handleUpload(files) {
   if (!files.length) { alert("Choose at least one photo."); return; }
 
   const status = $("#upload-status");
-  status.textContent = "Processing " + files.length + " photo(s)…";
+
+  // Check Supabase is available
+  if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+    status.textContent = "Supabase is not configured. Please check config/config.json.";
+    status.style.color = "var(--danger)";
+    return;
+  }
+
+  status.textContent = "Uploading " + files.length + " photo(s) to Supabase…";
   status.style.color = "var(--muted)";
 
-  const useSupabase = window.getSupabaseClient && window.getSupabaseClient();
-  
-  if (useSupabase) {
-    let added = 0;
-    for (const file of files) {
-      status.textContent = `Uploading ${added + 1} of ${files.length}…`;
-      const result = await GalleryData.uploadToSupabase(file, { cat, label, note });
-      if (result.error) {
-        status.textContent = `Upload failed: ${result.error}`;
-        status.style.color = "var(--danger)";
-        return;
-      }
-      added++;
-    }
-    
-    status.textContent = added + " photo(s) uploaded to Supabase. Refreshing gallery…";
-    status.style.color = "var(--success)";
-    
-    const items = await GalleryData.load();
-    for (const file of files) {
-      const src = await processImage(file);
-      if (src) {
-        items.push({ id: "a" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), src, cat, label, note });
-      }
-    }
-    GalleryData.save(items);
-    
-    renderList(); updateMeter();
-    $("#a-label").value = ""; $("#a-note").value = ""; $("#a-files").value = "";
-  } else {
-    const items = await GalleryData.load();
-    let added = 0;
-    for (const file of files) {
-      const src = await processImage(file);
-      if (!src) { status.textContent = "Could not read one of the files. Skipped."; continue; }
-      items.push({ id: "a" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), src, cat, label, note });
-      added++;
-    }
-
-    if (GalleryData.save(items)) {
-      status.textContent = added + " photo(s) saved locally. They now appear in the gallery.";
-      status.style.color = "var(--success)";
-      renderList(); updateMeter();
-      $("#a-label").value = ""; $("#a-note").value = ""; $("#a-files").value = "";
-    } else {
-      status.textContent = "Could not save — storage limit reached. Delete some older photos first.";
+  let added = 0;
+  for (const file of files) {
+    status.textContent = `Uploading ${added + 1} of ${files.length}…`;
+    const result = await GalleryData.uploadToSupabase(file, { cat, label, note });
+    if (result.error) {
+      status.textContent = `Upload failed: ${result.error}`;
       status.style.color = "var(--danger)";
+      return;
     }
+    added++;
   }
+
+  status.textContent = added + " photo(s) uploaded to Supabase cloud!";
+  status.style.color = "var(--success)";
+
+  renderList();
+  $("#a-label").value = ""; $("#a-note").value = ""; $("#a-files").value = "";
 }
 
 /* ---------- views ---------- */
 async function showPanel() {
   $("#login-view").style.display = "none";
-  $("#panel-view").style.display = "block";
-  await renderList();
+  $("#panel-view").style.display = "block";    await renderList();
   updateMeter();
   updateSupabaseStatus();
 }

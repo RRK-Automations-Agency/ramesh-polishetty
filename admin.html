@@ -57,8 +57,9 @@
     <div class="login-meta">
       🔒 Authentication powered by Supabase Auth<br />
       📷 Photos are stored in Supabase cloud storage<br />
-      💡 <strong>First time?</strong> Just enter any email & password — an offline admin account will be created automatically.<br />
-      ☁️ For cloud storage, create a user in <a href="https://app.supabase.com" target="_blank">Supabase Dashboard</a> → Authentication → Users
+      ✅ <strong>Step 1:</strong> Create a user in <a href="https://app.supabase.com" target="_blank">Supabase Dashboard</a> → Authentication → Users → Add user<br />
+      ✅ <strong>Step 2:</strong> Enter that email & password here to login<br />
+      ⚠️ <strong>No offline mode</strong> — Supabase account is required
     </div>
   </div>
 
@@ -152,10 +153,10 @@
       const isOnline = window.isConfigValid && window.isConfigValid();
       if (isOnline) {
         badge.className = 'auth-badge cloud';
-        badge.innerHTML = '\u2601\ufe0f <strong>Cloud Mode</strong> \u2014 Enter your Supabase email & password, or any email/password for offline mode.';
+        badge.innerHTML = '\u2601\ufe0f <strong>Supabase Connected</strong> \u2014 Login with your Supabase account credentials.';
       } else {
         badge.className = 'auth-badge offline';
-        badge.innerHTML = '\uD83D\udcbe <strong>Offline Mode</strong> \u2014 Enter any email & password (6+ characters). An offline admin account will be created.';
+        badge.innerHTML = '\u274c <strong>Supabase Not Configured</strong> \u2014 Please add your credentials to config/config.json first.';
       }
     }
   });

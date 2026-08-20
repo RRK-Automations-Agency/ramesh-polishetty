@@ -1,13 +1,12 @@
 /* ============================================================
-   RAMESH POLISETTY — Secure Authentication Module
-   Uses Supabase Auth for backend authentication.
-   Falls back to offline mode when Supabase not configured.
+   RAMESH POLISETTY — Authentication Module (Supabase Only)
+   Uses Supabase Auth for all authentication.
+   No offline mode — cloud storage required.
    ============================================================ */
 
 const Auth = {
   SESSION_KEY: 'rp_auth_session',
   RATE_LIMIT_KEY: 'rp_rate_limit',
-  OFFLINE_AUTH_KEY: 'rp_offline_auth',
   MAX_ATTEMPTS: 5,
   LOCKOUT_TIME: 15 * 60 * 1000, // 15 minutes
   SESSION_DURATION: 24 * 60 * 60 * 1000, // 24 hours
@@ -37,7 +36,6 @@ const Auth = {
         const remaining = Math.ceil((this.LOCKOUT_TIME - timePassed) / 60000);
         return { locked: true, remaining };
       }
-      // Reset after lockout period
       this.setRateLimit(0);
     }
     return { locked: false };
@@ -52,26 +50,15 @@ const Auth = {
     this.setRateLimit(0);
   },
 
-  /* ---------- input sanitization ---------- */
-  sanitizeInput(input) {
-    if (typeof input !== 'string') return '';
-    return input
-      .replace(/[<>]/g, '') // Remove HTML tags
-      .replace(/['"]/g, '') // Remove quotes
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .trim()
-      .substring(0, 255); // Limit length
-  },
-
+  /* ---------- input validation ---------- */
   validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email) && email.length <= 254;
   },
 
   validatePassword(password) {
-    return typeof password === 'string' && 
-           password.length >= 6 && 
-           password.length <= 128;
+    return typeof password === 'string' &&
+           password.length >= 6 && password.length <= 128;
   },
 
   /* ---------- session management ---------- */
@@ -80,7 +67,6 @@ const Auth = {
       const data = sessionStorage.getItem(this.SESSION_KEY);
       if (!data) return null;
       const session = JSON.parse(data);
-      // Check if session expired
       if (Date.now() - session.timestamp > this.SESSION_DURATION) {
         this.logout();
         return null;
@@ -93,17 +79,15 @@ const Auth = {
 
   setSession(user) {
     const sessionData = {
-      userId: user.id || 'offline-user',
-      email: user.email || 'admin@local',
-      timestamp: Date.now(),
-      isOffline: user.isOffline || false
+      userId: user.id,
+      email: user.email,
+      timestamp: Date.now()
     };
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
   },
 
   logout() {
     sessionStorage.removeItem(this.SESSION_KEY);
-    // Also sign out from Supabase if available
     if (window.getSupabaseClient && window.getSupabaseClient()) {
       window.getSupabaseClient().auth.signOut();
     }
@@ -113,10 +97,8 @@ const Auth = {
     return this.getSession() !== null;
   },
 
-  /* ---------- offline authentication ---------- */
-  // For when Supabase is not configured
-  // ⚠️ WARNING: This is less secure - only use for development/testing
-  async offlineLogin(email, password) {
+  /* ---------- main authentication (Supabase only) ---------- */
+  async login(email, password) {
     // Check rate limit first
     const lockout = this.isLockedOut();
     if (lockout.locked) {
@@ -126,6 +108,9 @@ const Auth = {
     }
 
     // Validate input
+    email = (email || '').trim();
+    password = password || '';
+
     if (!this.validateEmail(email)) {
       return { error: 'Please enter a valid email address.' };
     }
@@ -133,138 +118,57 @@ const Auth = {
       return { error: 'Password must be between 6 and 128 characters.' };
     }
 
-    // Check for stored offline credentials
-    const stored = localStorage.getItem(this.OFFLINE_AUTH_KEY);
-    let storedCredentials = null;
-    
-    if (stored) {
-      try {
-        storedCredentials = JSON.parse(stored);
-      } catch {
-        // Invalid stored data
-      }
-    }
-
-    // If no stored credentials, create one (first time setup)
-    if (!storedCredentials) {
-      // Hash the password (simple hash for offline mode)
-      const passwordHash = await this.simpleHash(password);
-      storedCredentials = {
-        email: email.toLowerCase(),
-        passwordHash: passwordHash,
-        createdAt: Date.now()
-      };
-      localStorage.setItem(this.OFFLINE_AUTH_KEY, JSON.stringify(storedCredentials));
-      
-      this.resetAttempts();
-      this.setSession({ email: email, isOffline: true });
-      
-      return { 
-        success: true, 
-        user: { email: email, isOffline: true },
-        message: 'Offline admin account created! For cloud storage, create a user in Supabase Dashboard > Authentication > Users.'
-      };
-    }
-
-    // Verify credentials
-    const passwordHash = await this.simpleHash(password);
-    if (email.toLowerCase() !== storedCredentials.email || 
-        passwordHash !== storedCredentials.passwordHash) {
-      this.recordFailedAttempt();
-      const { attempts } = this.getRateLimit();
-      const remaining = this.MAX_ATTEMPTS - attempts;
-      
-      if (remaining <= 0) {
-        return {
-          error: 'Account locked due to too many failed attempts. Please try again later.'
-        };
-      }
-      
+    // Check if Supabase is configured
+    if (!window.getSupabaseClient || !window.getSupabaseClient()) {
       return {
-        error: `Invalid credentials. ${remaining} attempts remaining.`
+        error: 'Supabase is not configured. Please set up your config.json with valid Supabase credentials.'
       };
     }
 
-    // Success
-    this.resetAttempts();
-    this.setSession({ email: email, isOffline: true });
-    
-    return { 
-      success: true, 
-      user: { email: email, isOffline: true }
-    };
-  },
+    // Try Supabase authentication
+    try {
+      const client = window.getSupabaseClient();
 
-  /* ---------- simple hash for offline mode ---------- */
-  async simpleHash(str) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str + 'rp_salt_2024'); // Add salt
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  },
+      const { data, error } = await client.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
 
-  /* ---------- main authentication ---------- */
-  async login(email, password) {
-    // Sanitize inputs
-    email = this.sanitizeInput(email);
-    password = this.sanitizeInput(password);
+      if (error) {
+        this.recordFailedAttempt();
+        const { attempts } = this.getRateLimit();
+        const remaining = this.MAX_ATTEMPTS - attempts;
 
-    // Validate
-    if (!this.validateEmail(email)) {
-      return { error: 'Please enter a valid email address.' };
-    }
-    if (!this.validatePassword(password)) {
-      return { error: 'Password must be between 6 and 128 characters.' };
-    }
-
-    // Check rate limit first
-    const lockout = this.isLockedOut();
-    if (lockout.locked) {
-      return {
-        error: `Too many failed attempts. Please try again in ${lockout.remaining} minutes.`
-      };
-    }
-
-    // Try Supabase authentication first
-    if (window.getSupabaseClient && window.getSupabaseClient()) {
-      try {
-        const client = window.getSupabaseClient();
-        
-        const { data, error } = await client.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-
-        if (error) {
-          // Always fall through to offline mode on ANY Supabase error
-          console.log('Supabase auth error:', error.message, '— trying offline mode');
-        } else if (data && data.user) {
-          // Success with Supabase
-          this.resetAttempts();
-          this.setSession(data.user);
-          return { success: true, user: data.user };
+        if (remaining <= 0) {
+          return { error: 'Account locked due to too many failed attempts. Please try again later.' };
         }
-      } catch (err) {
-        console.error('Supabase login error:', err);
-        // Fall through to offline mode
-      }
-    }
 
-    // Fallback to offline mode
-    console.warn('Using offline mode for authentication');
-    return this.offlineLogin(email, password);
+        // Provide helpful error messages
+        const errMsg = error.message || 'Unknown error';
+        if (errMsg.includes('Invalid login credentials')) {
+          return { error: `Invalid email or password. ${remaining} attempts remaining. If you haven't created an account yet, go to Supabase Dashboard > Authentication > Users and create one.` };
+        }
+        return { error: `Login failed: ${errMsg}. ${remaining} attempts remaining.` };
+      }
+
+      if (data && data.user) {
+        this.resetAttempts();
+        this.setSession(data.user);
+        return { success: true, user: data.user };
+      }
+
+      return { error: 'Login failed. Please try again.' };
+    } catch (err) {
+      console.error('Supabase login error:', err);
+      return { error: 'Network error. Please check your internet connection and try again.' };
+    }
   },
 
   /* ---------- user management (Supabase only) ---------- */
   async createUser(email, password, metadata = {}) {
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
-      return { error: 'User creation requires Supabase. Please configure Supabase first.' };
+      return { error: 'Supabase is not configured.' };
     }
-
-    // Sanitize inputs
-    email = this.sanitizeInput(email);
-    password = this.sanitizeInput(password);
 
     if (!this.validateEmail(email)) {
       return { error: 'Please enter a valid email address.' };
@@ -275,19 +179,13 @@ const Auth = {
 
     try {
       const client = window.getSupabaseClient();
-      
       const { data, error } = await client.auth.signUp({
         email: email,
         password: password,
-        options: {
-          data: metadata
-        }
+        options: { data: metadata }
       });
 
-      if (error) {
-        return { error: error.message };
-      }
-
+      if (error) return { error: error.message };
       return { success: true, user: data.user };
     } catch (err) {
       console.error('User creation error:', err);
@@ -297,25 +195,20 @@ const Auth = {
 
   async resetPassword(email) {
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
-      return { error: 'Password reset requires Supabase. Please configure Supabase first.' };
+      return { error: 'Supabase is not configured.' };
     }
 
-    email = this.sanitizeInput(email);
     if (!this.validateEmail(email)) {
       return { error: 'Please enter a valid email address.' };
     }
 
     try {
       const client = window.getSupabaseClient();
-      
       const { error } = await client.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/admin.html'
       });
 
-      if (error) {
-        return { error: error.message };
-      }
-
+      if (error) return { error: error.message };
       return { success: true };
     } catch (err) {
       console.error('Password reset error:', err);
@@ -326,33 +219,23 @@ const Auth = {
   /* ---------- access control ---------- */
   async checkAccess() {
     const session = this.getSession();
-    if (!session) {
-      return false;
-    }
+    if (!session) return false;
 
-    // Offline mode — session exists and hasn't expired
-    if (session.isOffline) {
-      return true;
-    }
-
-    // Supabase mode — verify the server-side session is still valid
     if (window.getSupabaseClient && window.getSupabaseClient()) {
       try {
         const client = window.getSupabaseClient();
         const { data: { user } } = await client.auth.getUser();
-        
         if (!user) {
           this.logout();
           return false;
         }
-        
         return true;
       } catch {
         return false;
       }
     }
 
-    return true;
+    return false;
   },
 
   /* ---------- utility ---------- */
@@ -361,10 +244,6 @@ const Auth = {
       return 'supabase';
     }
     return 'offline';
-  },
-
-  clearOfflineCredentials() {
-    localStorage.removeItem(this.OFFLINE_AUTH_KEY);
   }
 };
 

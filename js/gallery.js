@@ -22,7 +22,7 @@ const GalleryData = {
   ],
 
   async load() {
-    // Try Supabase first if configured
+    // Load from Supabase cloud storage
     if (window.getSupabaseClient && window.getSupabaseClient()) {
       try {
         const client = window.getSupabaseClient();
@@ -33,7 +33,10 @@ const GalleryData = {
         
         if (error) {
           console.warn('Supabase query error (table may not exist yet):', error.message);
-        } else if (data && data.length > 0) {
+          return this.DEFAULTS.map((d) => ({ ...d }));
+        }
+        
+        if (data && data.length > 0) {
           return data.map(item => ({
             id: item.id,
             src: item.image_url,
@@ -42,47 +45,29 @@ const GalleryData = {
             note: item.note || ''
           }));
         }
-        // Table exists but is empty, or query succeeded with 0 rows
+        
+        // Table exists but empty
+        return [];
       } catch (e) {
-        console.warn('Supabase load failed, using localStorage:', e.message || e);
+        console.error('Supabase load failed:', e.message || e);
+        return this.DEFAULTS.map((d) => ({ ...d }));
       }
     }
     
-    // Fallback to localStorage
-    try {
-      const raw = localStorage.getItem(this.KEY);
-      if (raw === null) {
-        localStorage.setItem(this.KEY, JSON.stringify(this.DEFAULTS));
-        return this.DEFAULTS.map((d) => ({ ...d }));
-      }
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : this.DEFAULTS.map((d) => ({ ...d }));
-    } catch (e) {
-      return this.DEFAULTS.map((d) => ({ ...d }));
-    }
+    // Supabase not configured
+    console.warn('Supabase not configured — cannot load photos.');
+    return this.DEFAULTS.map((d) => ({ ...d }));
   },
 
   async save(items) {
-    // Try Supabase first if configured
-    if (window.getSupabaseClient && window.getSupabaseClient()) {
-      try {
-        const client = window.getSupabaseClient();
-        // For now, we'll save to localStorage and sync later
-        // Full Supabase sync would require more complex logic
-      } catch (e) {
-        console.log('Supabase save failed, using localStorage:', e);
-      }
-    }
-    
-    // Always save to localStorage as backup
+    // Photos are managed via Supabase directly
+    // This method is kept for compatibility but is no longer the primary storage
     try { localStorage.setItem(this.KEY, JSON.stringify(items)); return true; }
-    catch (e) { return false; }   // quota exceeded, etc.
+    catch (e) { return false; }
   },
 
   usage() {
-    const raw = localStorage.getItem(this.KEY);
-    const total = 5 * 1024 * 1024; // ~5 MB browser budget
-    return { used: raw ? new Blob([raw]).size : 0, total };
+    return { used: 0, total: Infinity };
   },
 
   // Upload photo to Supabase Storage

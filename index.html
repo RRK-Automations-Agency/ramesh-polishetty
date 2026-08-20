@@ -65,13 +65,12 @@
     </div>
     <div class="hero-art">
       <div class="frame">
-        <div id="hero-photo-fb" class="monogram">RP</div>
+        <img src="photos/hero-1.jpeg" alt="Ramesh Polisetty — Training" class="hero-main-img" />
       </div>
       <div class="ring"></div>
       <div class="hero-tag">Build · Transform · Maintain</div>
       <div class="hero-photos" id="hero-photos">
-        <div class="hero-photo-placeholder"><div class="pico">📸</div></div>
-        <div class="hero-photo-placeholder"><div class="pico">📸</div></div>
+        <img src="photos/hero-2.jpeg" alt="Ramesh Polisetty — Coaching" loading="lazy" />
       </div>
     </div>
   </div>
@@ -232,62 +231,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/main.js"></script>
 <script src="js/gallery.js"></script>
-<script>
-  /* Load hero photos dynamically from Supabase gallery */
-  async function loadHeroPhotos() {
-    if (!window.GalleryData) return;
-    var items;
-    try {
-      items = await window.GalleryData.load();
-    } catch (e) {
-      console.log('Hero: could not load gallery:', e);
-      return;
-    }
-    var withSrc = items.filter(function(i) { return i.src && i.src.length > 0; });
-    if (!withSrc.length) {
-      console.log('Hero: no photos uploaded yet — showing placeholders');
-      return;
-    }
-
-    var heroFrame = document.querySelector('.hero-art .frame');
-    var heroPhotos = document.getElementById('hero-photos');
-
-    /* Main hero image — use the first photo with a source */
-    var mainPhoto = document.createElement('img');
-    mainPhoto.src = withSrc[0].src;
-    mainPhoto.alt = withSrc[0].label || 'Ramesh Polisetty';
-    mainPhoto.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;';
-    var fb = document.getElementById('hero-photo-fb');
-    if (fb) fb.style.display = 'none';
-    heroFrame.insertBefore(mainPhoto, heroFrame.firstChild);
-
-    /* Bottom photo strip — use next 2 photos */
-    if (heroPhotos && withSrc.length > 1) {
-      heroPhotos.innerHTML = '';
-      var showCount = Math.min(withSrc.length - 1, 2);
-      for (var j = 0; j < showCount; j++) {
-        var photo = document.createElement('img');
-        photo.src = withSrc[j + 1].src;
-        photo.alt = withSrc[j + 1].label || 'Ramesh Polisetty';
-        photo.loading = 'lazy';
-        photo.onerror = function() { this.style.display = 'none'; };
-        heroPhotos.appendChild(photo);
-      }
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    /* Wait for gallery.js to init Supabase, then load hero photos */
-    function waitForGallery(retries) {
-      retries = retries || 0;
-      if (window.GalleryData && window.GalleryData.load) {
-        loadHeroPhotos();
-      } else if (retries < 20) {
-        setTimeout(function() { waitForGallery(retries + 1); }, 250);
-      }
-    }
-    waitForGallery();
-  });
-</script>
+<!-- Hero photos are now static in the HTML: photos/hero-1.jpeg and photos/hero-2.jpeg -->
 </body>
 </html>
