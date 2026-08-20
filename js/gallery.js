@@ -42,7 +42,8 @@ const GalleryData = {
             src: item.image_url,
             cat: item.category,
             label: item.label,
-            note: item.note || ''
+            note: item.note || '',
+            file_name: item.file_name || null
           }));
         }
         
@@ -106,6 +107,32 @@ const GalleryData = {
     if (dbError) return { error: dbError.message };
     
     return { data: dbData[0] };
+  },
+
+  // Delete photo from Supabase (storage + database)
+  async deleteFromSupabase(item) {
+    if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+      return { error: 'Supabase not configured' };
+    }
+    
+    const client = window.getSupabaseClient();
+    
+    // Delete from storage if file_name exists
+    if (item.file_name) {
+      const { error: storageError } = await client.storage
+        .from(window.SUPABASE_CONFIG.bucketName)
+        .remove([item.file_name]);
+      if (storageError) console.warn('Storage delete warning:', storageError.message);
+    }
+    
+    // Delete from database
+    const { error: dbError } = await client
+      .from(window.SUPABASE_CONFIG.tableName)
+      .delete()
+      .eq('id', item.id);
+    
+    if (dbError) return { error: dbError.message };
+    return { success: true };
   }
 };
 

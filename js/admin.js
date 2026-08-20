@@ -98,9 +98,23 @@ async function renderList() {
       '<button class="del" title="Delete">✕</button>';
     el.querySelector(".del").addEventListener("click", async () => {
       if (!confirm('Delete "' + escapeHTML(item.label) + '"?')) return;
-      const next = items.filter((x) => x.id !== item.id);
-      if (await GalleryData.save(next)) { renderList(); updateMeter(); }
-      else alert("Could not save. Storage might be full.");
+      
+      const status = $("#upload-status");
+      
+      // Try Supabase delete first
+      if (window.getSupabaseClient && window.getSupabaseClient()) {
+        const result = await GalleryData.deleteFromSupabase(item);
+        if (result.error) {
+          alert('Delete failed: ' + result.error);
+          return;
+        }
+      }
+      
+      renderList();
+      if (status) {
+        status.textContent = 'Photo deleted successfully.';
+        status.style.color = 'var(--success)';
+      }
     });
     list.appendChild(el);
   });
@@ -147,7 +161,8 @@ async function handleUpload(files) {
 /* ---------- views ---------- */
 async function showPanel() {
   $("#login-view").style.display = "none";
-  $("#panel-view").style.display = "block";    await renderList();
+  $("#panel-view").style.display = "block";
+  await renderList();
   updateMeter();
   updateSupabaseStatus();
 }
@@ -260,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       handleUpload($("#a-files").files);
     });
-    const zone = $("#upload-zone");
+    const zone = $(".upload-zone");
     const fileInput = $("#a-files");
     
     if (zone) {

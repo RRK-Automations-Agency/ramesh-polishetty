@@ -30,6 +30,7 @@ async function loadConfig() {
         bucketName: data.BUCKET_NAME || 'photos',
         tableName: data.TABLE_NAME || 'photos'
       };
+      window.SUPABASE_CONFIG = SUPABASE_CONFIG;
       configLoaded = true;
       console.log('✅ Config loaded successfully');
       return true;
