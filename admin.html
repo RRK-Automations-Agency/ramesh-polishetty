@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel — Ramesh Polisetty</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="admin">
+
+<header class="admin-bar">
+  <div class="wrap admin-bar-in">
+    <div class="brand">Ramesh<span>.</span>Polisetty <i>· Admin</i></div>
+    <a href="index.html" class="btn btn-ghost btn-sm">View site</a>
+  </div>
+</header>
+
+<div class="wrap admin-wrap">
+
+  <!-- ==================== LOGIN VIEW ==================== -->
+  <div id="login-view" class="login-card">
+    <h1>Admin Panel</h1>
+    <p class="login-subtitle">Secure login required. Only authorized administrators can access this panel.</p>
+
+    <div id="auth-badge" class="auth-badge"></div>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" placeholder="admin@rameshpolisetty.com" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="login-pass">Password</label>
+        <input id="login-pass" type="password" placeholder="Enter your password" required autocomplete="current-password" />
+      </div>
+
+      <div id="login-err" class="err"></div>
+
+      <div id="rate-limit-box" class="rate-limit-box">
+        <p class="rl-title">⚠️ Account temporarily locked</p>
+        <p id="lockout-timer" class="rl-timer"></p>
+      </div>
+
+      <div class="login-actions">
+        <button class="btn btn-accent btn-full" type="submit">Login Securely</button>
+      </div>
+    </form>
+
+    <div class="login-links">
+      <a href="#" id="forgot-password">Forgot password?</a>
+    </div>
+
+    <div class="login-meta">
+      🔒 Authentication powered by Supabase Auth<br />
+      📷 Photos are stored in Supabase cloud storage<br />
+      See <a href="docs/QUICK_START.md">QUICK_START.md</a> for setup
+    </div>
+  </div>
+
+  <!-- ==================== PANEL VIEW ==================== -->
+  <div id="panel-view" style="display:none;">
+
+    <div class="admin-head">
+      <h1>Photo <span>manager</span></h1>
+      <div class="admin-head-actions">
+        <span id="supabase-status" class="admin-status">Checking Supabase...</span>
+        <button id="logout" class="btn btn-ghost btn-sm">Log out</button>
+        <a href="gallery.html" class="btn btn-accent btn-sm">View gallery</a>
+      </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="upload-card">
+      <h3>Add a photo</h3>
+      <form id="upload-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="a-label">Label</label>
+            <input id="a-label" type="text" placeholder="e.g. Transformation — Fat loss" />
+          </div>
+          <div class="field">
+            <label for="a-cat">Category</label>
+            <select id="a-cat">
+              <option value="transformations">Transformations</option>
+              <option value="achievements">Achievements</option>
+              <option value="powerlifting">Powerlifting</option>
+              <option value="coach">Coach</option>
+              <option value="clients">Clients</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="a-note">Note (optional)</label>
+          <input id="a-note" type="text" placeholder="e.g. 6 months · 12 kg down" />
+        </div>
+
+        <label class="upload-zone" for="a-files">
+          <div class="uz-icon">📸</div>
+          <div class="uz-text">Click to choose, or drag & drop photos here</div>
+          <div class="uz-hint">Photos are auto-resized and compressed before saving.</div>
+        </label>
+        <input id="a-files" type="file" accept="image/*" multiple style="display:none;" />
+
+        <p id="upload-status" class="upload-status"></p>
+        <button class="btn btn-accent btn-full mt-2" type="submit">Save photo(s)</button>
+      </form>
+    </div>
+
+    <!-- Storage Meter -->
+    <div class="meter mb-3">
+      <div class="bar"><i id="meter-bar"></i></div>
+      <p id="meter-label"></p>
+    </div>
+
+    <!-- Saved Photos -->
+    <h3 class="admin-list-heading">Saved photos <span>— shown on the gallery</span></h3>
+    <div class="admin-list" id="admin-list"></div>
+  </div>
+
+</div>
+
+<script src="js/supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (window.loadConfig) await window.loadConfig();
+    if (window.initSupabase) await window.initSupabase();
+
+    const badge = document.getElementById('auth-badge');
+    if (badge && window.Auth) {
+      const mode = window.Auth.getAuthMode();
+      if (mode === 'supabase') {
+        badge.className = 'auth-badge cloud';
+        badge.innerHTML = '☁️ <strong>Cloud Mode</strong> — Authenticated via Supabase';
+      } else {
+        badge.className = 'auth-badge offline';
+        badge.innerHTML = '💾 <strong>Offline Mode</strong> — Configure Supabase for cloud storage';
+      }
+    }
+  });
+</script>
+<script src="js/auth.js"></script>
+<script src="js/gallery.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

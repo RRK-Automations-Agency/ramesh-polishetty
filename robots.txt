@@ -1,0 +1,21 @@
+# Robots.txt for Ramesh Polisetty Website
+# Prevent search engines from indexing sensitive pages
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /js/auth.js
+Disallow: /js/supabase-config.js
+Disallow: /SUPABASE_SETUP.md
+
+# Allow search engines to index public pages
+User-agent: Googlebot
+Allow: /
+Disallow: /admin.html
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin.html
+
+# Sitemap
+Sitemap: https://rameshpolisetty.com/sitemap.xml

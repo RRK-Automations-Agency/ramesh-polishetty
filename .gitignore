@@ -1,0 +1,68 @@
+# ============================================================
+# RAMESH POLISETTY — Git Ignore Rules
+# Protect sensitive files from being committed
+# ============================================================
+
+# Environment variables & config (contains API keys!)
+.env
+.env.local
+.env.*.local
+config/config.json
+config.local.json
+config.production.json
+
+# Supabase
+supabase/.temp/
+supabase/.env
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build output
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Supabase local dev
+supabase/.branches/
+supabase/.temp/
+
+# Backup files
+*.bak
+*.backup
+*.sql.bak
+
+# Photos (large files, use Supabase Storage instead)
+photos/*.jpeg
+photos/*.jpg
+photos/*.png
+photos/*.gif
+photos/*.webp
+
+# Vercel
+.vercel/
