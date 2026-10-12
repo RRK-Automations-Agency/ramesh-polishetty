@@ -404,6 +404,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    // Picking a photo with the file dialog must upload it right away —
+    // dragging & dropping already did, choosing a file did not.
+    if (fileInput) {
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files && fileInput.files.length) handleUpload(fileInput.files);
+      });
+    }
   }
 
   // Search

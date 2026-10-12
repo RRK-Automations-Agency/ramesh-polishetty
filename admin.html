@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v6" />
+<link rel="stylesheet" href="css/styles.css?v7" />
 </head>
 <body data-page="admin">
 
@@ -144,10 +144,10 @@
 
         <label class="upload-zone" for="a-files">
           <div class="uz-icon">📸</div>
-          <div class="uz-text">Click to choose, or drag & drop photos here</div>
-          <div class="uz-hint">Photos are auto-resized and compressed before saving.</div>
+          <div class="uz-text">Tap to choose, or drop photos here</div>
+          <div class="uz-hint">A chosen photo uploads straight away — it is resized and compressed first.</div>
         </label>
-        <input id="a-files" type="file" accept="image/*" multiple style="display:none;" />
+        <input id="a-files" type="file" accept="image/*" multiple class="sr-only" tabindex="-1" />
 
         <p id="upload-status" class="upload-status"></p>
         <button class="btn btn-accent btn-full mt-2" type="submit">Save photo(s)</button>
@@ -204,11 +204,11 @@
 
 </div>
 
-<script src="js/supabase-config.js?v6"></script>
+<script src="js/supabase-config.js?v7"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/auth.js?v6"></script>
-<script src="js/gallery.js?v6"></script>
-<script src="js/admin.js?v6"></script>
-<script src="js/admin-boot.js?v6"></script>
+<script src="js/auth.js?v7"></script>
+<script src="js/gallery.js?v7"></script>
+<script src="js/admin.js?v7"></script>
+<script src="js/admin-boot.js?v7"></script>
 </body>
 </html>

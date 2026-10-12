@@ -1,15 +1,15 @@
 /* ============================================================
    RAMESH POLISETTY — gallery + lightbox
-   Reads photos saved by the admin panel (localStorage + Supabase fallback).
+   Reads photos from Supabase, with a local cache fallback.
    Loaded on pages that contain a [data-gallery] element.
    ============================================================ */
 
-/* Storage key shared with the admin panel */
+/* Local cache key for photo items */
 const GalleryData = {
   KEY: "rp_gallery_items",
 
   /* Default placeholder cards so the gallery is never empty.
-     Replace with real photos from the admin panel. */
+     Shown until real photos are available. */
   DEFAULTS: [
     { id: "d1", src: "", cat: "transformations", label: "Transformation — Fat loss",  note: "" },
     { id: "d2", src: "", cat: "transformations", label: "Transformation — Muscle gain", note: "" },
@@ -151,7 +151,7 @@ const MASONRY_RATIOS = ["3/4", "4/5", "1/1", "4/3", "2/3", "1/1", "5/6"];
 function renderCards(container, items) {
   container.innerHTML = "";
   if (!items.length) {
-    container.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">No photos here yet. Ramesh can add some from the admin panel.</p>';
+    container.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">No photos here yet — new ones are on the way.</p>';
     return;
   }
   items.forEach((item, i) => {
@@ -161,7 +161,7 @@ function renderCards(container, items) {
     card.innerHTML =
       (item.src
         ? '<img src="' + escHTML(item.src) + '" alt="' + escHTML(item.label) + '" loading="lazy"/>'
-        : '<div class="ph"><div><div class="pico">📸</div><small>Add photo</small></div></div>') +
+        : '<div class="ph"><div><div class="pico">📸</div><small>Coming soon</small></div></div>') +
       '<span class="cat">' + escHTML(item.cat) + '</span>' +
       '<div class="cap">' + escHTML(item.label) + '</div>';
     card.addEventListener("click", () => openLightbox(container.__items, i));
@@ -280,5 +280,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll("[data-gallery]").forEach(initGallery);
 });
 
-/* expose for the admin panel */
+/* expose shared data for other scripts */
 window.GalleryData = GalleryData;

@@ -3,8 +3,6 @@
 
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /admin
 Disallow: /config/
 Disallow: /js/auth.js
 Disallow: /js/supabase-config.js
