@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-<title>Admin Panel — Ramesh Polisetty</title>
+<title>Photo Manager — Ramesh Polisetty</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v8" />
+<link rel="stylesheet" href="css/styles.css?v9" />
 </head>
 <body data-page="admin">
 
@@ -26,8 +26,8 @@
 
   <!-- ==================== LOGIN VIEW ==================== -->
   <div id="login-view" class="login-card">
-    <h1>Admin Panel</h1>
-    <p class="login-subtitle">Secure login required. Only authorized administrators can access this panel.</p>
+    <h1>Photo Manager</h1>
+    <p class="login-subtitle">Sign in to add, edit or remove the photos on the website.</p>
 
     <div id="auth-badge" class="auth-badge"></div>
 
@@ -35,11 +35,13 @@
       <div class="field">
         <label for="login-email">Email</label>
         <input id="login-email" type="email" placeholder="admin@example.com" required autocomplete="email" />
-      </div>
-      <div class="field">
-        <label for="login-pass">Password</label>
-        <input id="login-pass" type="password" placeholder="Enter your password" required autocomplete="current-password" />
-      </div>
+      </div>        <div class="field">
+          <label for="login-pass">Password</label>
+          <input id="login-pass" type="password" placeholder="Enter your password" required autocomplete="current-password" />
+        </div>
+        <label class="check-line" for="show-pass">
+          <input type="checkbox" id="show-pass" /> Show password
+        </label>
 
       <div id="login-err" class="err"></div>
 
@@ -63,10 +65,10 @@
 
     <!-- Dashboard Stats -->
     <div class="admin-head">
-      <h1>Admin <span>Dashboard</span></h1>
+      <h1>Photo <span>Manager</span></h1>
       <div class="admin-head-actions">
-        <span id="supabase-status" class="admin-status">Checking Supabase...</span>
-        <button id="logout" class="btn btn-ghost btn-sm">Log out</button>
+        <span id="supabase-status" class="admin-status">Checking connection...</span>
+        <button id="logout" class="btn btn-ghost btn-sm" aria-label="Log out of the photo manager">Log out</button>
         <a href="gallery.html" class="btn btn-accent btn-sm" target="_blank" rel="noopener">View gallery</a>
       </div>
     </div>
@@ -116,52 +118,67 @@
       </div>
     </div>
 
-    <!-- Upload Form -->
+    <!-- Upload Form — numbered steps, written for people who do not code -->
     <div class="upload-card">
       <h3>Add a photo</h3>
+      <p class="hint" style="margin:0 0 18px;">Fill in the details, then choose the photo. It uploads by itself and appears on the website within seconds.</p>
       <form id="upload-form">
-        <div class="field-row">
+        <div class="up-step">
+          <div class="step-label"><span class="num">1</span> Photo title</div>
           <div class="field">
-            <label for="a-label">Label</label>
             <input id="a-label" type="text" placeholder="e.g. Transformation — Fat loss" />
+            <p class="hint" style="margin:8px 0 0;">This line appears under the photo on the website.</p>
           </div>
+        </div>
+
+        <div class="up-step">
+          <div class="step-label"><span class="num">2</span> Where should it appear?</div>
           <div class="field">
-            <label for="a-cat">Category</label>
             <select id="a-cat">
-              <option value="transformations">Transformations</option>
-              <option value="achievements">Achievements</option>
-              <option value="powerlifting">Powerlifting</option>
-              <option value="coach">Coach</option>
-              <option value="clients">Clients</option>
+              <option value="transformations">Transformations — before/after results</option>
+              <option value="achievements">Achievements — wins and records</option>
+              <option value="powerlifting">Powerlifting — strength work</option>
+              <option value="coach">Coach — photos of Ramesh</option>
+              <option value="clients">Clients — client photos</option>
             </select>
+            <p class="hint" style="margin:8px 0 0;">Only photos in the matching category show on that page.</p>
           </div>
         </div>
 
-        <div class="field">
-          <label for="a-note">Note (optional)</label>
-          <input id="a-note" type="text" placeholder="e.g. 6 months · 12 kg down" />
+        <div class="up-step">
+          <div class="step-label"><span class="num">3</span> Extra detail (optional)</div>
+          <div class="field">
+            <input id="a-note" type="text" placeholder="e.g. 6 months · 12 kg down" />
+          </div>
         </div>
 
-        <label class="upload-zone" for="a-files">
-          <div class="uz-icon">📸</div>
-          <div class="uz-text">Tap to choose, or drop photos here</div>
-          <div class="uz-hint">A chosen photo uploads straight away — it is resized and compressed first.</div>
-        </label>
-        <input id="a-files" type="file" accept="image/*" multiple class="sr-only" tabindex="-1" />
+        <div class="up-step">
+          <div class="step-label"><span class="num">4</span> Choose the photo</div>
+          <label class="upload-zone" for="a-files">
+            <div class="uz-icon">📸</div>
+            <div class="uz-text">Tap here to pick a photo — or drag one in</div>
+            <div class="uz-hint">JPG or PNG. It is resized and compressed automatically.</div>
+          </label>
+          <input id="a-files" type="file" accept="image/*" multiple class="sr-only" tabindex="-1" />
+        </div>
 
         <p id="upload-status" class="upload-status"></p>
-        <button class="btn btn-accent btn-full mt-2" type="submit">Save photo(s)</button>
+        <button class="btn btn-accent btn-full" type="submit">Upload the selected photo</button>
+        <p class="hint" style="margin:10px 0 0; text-align:center;">You normally don't need this button — choosing a photo uploads it straight away.</p>
       </form>
     </div>
 
     <!-- Search Bar -->
     <div class="admin-search">
-      <input id="admin-search" type="text" placeholder="Search photos by label, category, or note..." />
+      <input id="admin-search" type="text" placeholder="Search your photos by title or category..." />
       <button id="search-clear" class="btn btn-ghost btn-sm" style="display:none;">Clear</button>
     </div>
 
     <!-- Saved Photos -->
-    <h3 class="admin-list-heading">Saved photos <span>— shown on the gallery</span></h3>
+    <div class="list-bar">
+      <h3 class="admin-list-heading">Photos on the website <span id="list-count" class="count-pill">—</span></h3>
+      <span class="list-tip"><b>✎</b> edit &nbsp;·&nbsp; <b>✕</b> delete</span>
+    </div>
     <div class="admin-list" id="admin-list"></div>
   </div>
 
@@ -169,28 +186,28 @@
   <div id="edit-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Edit Photo</h3>
-        <button class="modal-close" id="edit-close">&times;</button>
+        <h3>Edit photo</h3>
+        <button class="modal-close" id="edit-close" aria-label="Close">&times;</button>
       </div>
       <form id="edit-form">
         <input type="hidden" id="edit-id" />
         <input type="hidden" id="edit-file-name" />
         <div class="field">
-          <label for="edit-label">Label</label>
+          <label for="edit-label">Photo title</label>
           <input id="edit-label" type="text" required />
         </div>
         <div class="field">
-          <label for="edit-cat">Category</label>
+          <label for="edit-cat">Where it appears</label>
           <select id="edit-cat">
-            <option value="transformations">Transformations</option>
-            <option value="achievements">Achievements</option>
-            <option value="powerlifting">Powerlifting</option>
-            <option value="coach">Coach</option>
-            <option value="clients">Clients</option>
+            <option value="transformations">Transformations — before/after results</option>
+            <option value="achievements">Achievements — wins and records</option>
+            <option value="powerlifting">Powerlifting — strength work</option>
+            <option value="coach">Coach — photos of Ramesh</option>
+            <option value="clients">Clients — client photos</option>
           </select>
         </div>
         <div class="field">
-          <label for="edit-note">Note (optional)</label>
+          <label for="edit-note">Extra detail (optional)</label>
           <input id="edit-note" type="text" />
         </div>
         <p id="edit-status" class="upload-status"></p>
@@ -204,11 +221,11 @@
 
 </div>
 
-<script src="js/supabase-config.js?v8"></script>
+<script src="js/supabase-config.js?v9"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/auth.js?v8"></script>
-<script src="js/gallery.js?v8"></script>
-<script src="js/admin.js?v8"></script>
-<script src="js/admin-boot.js?v8"></script>
+<script src="js/auth.js?v9"></script>
+<script src="js/gallery.js?v9"></script>
+<script src="js/admin.js?v9"></script>
+<script src="js/admin-boot.js?v9"></script>
 </body>
 </html>

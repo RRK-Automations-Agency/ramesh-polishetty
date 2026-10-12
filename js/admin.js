@@ -97,11 +97,19 @@ async function renderList(searchQuery) {
   allItems = await GalleryData.load();
   const items = searchQuery ? filterItems(searchQuery) : allItems;
   const list = $("#admin-list");
+  const count = $("#list-count");
+  if (count) {
+    count.textContent = searchQuery
+      ? items.length + " of " + allItems.length
+      : allItems.length + (allItems.length === 1 ? " photo" : " photos");
+  }
   list.innerHTML = "";
   
   if (!items.length) {
     list.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">' +
-      (searchQuery ? 'No photos match your search.' : 'No photos yet. Add your first one above.') +
+      (searchQuery
+        ? 'No photos match that search. Clear the search box to see everything again.'
+        : 'No photos yet. Use the form above: type a title, pick a category, then choose the photo.') +
       '</p>';
     return;
   }
@@ -125,7 +133,7 @@ async function renderList(searchQuery) {
     
     // Delete button with confirmation
     el.querySelector(".del").addEventListener("click", async () => {
-      const confirmed = confirm('Delete "' + item.label + '"?\n\nThis action cannot be undone.');
+      const confirmed = confirm('Remove "' + item.label + '" from the website?\n\nIt disappears from the gallery right away. This cannot be undone.');
       if (!confirmed) return;
       
       const status = $("#upload-status");
@@ -144,7 +152,7 @@ async function renderList(searchQuery) {
       renderList($("#admin-search") ? $("#admin-search").value : '');
       updateDashboardStats();
       if (status) {
-        status.textContent = 'Photo deleted successfully.';
+        status.textContent = 'Photo removed from the website.';
         status.style.color = 'var(--success)';
         setTimeout(() => { status.textContent = ''; }, 3000);
       }
@@ -346,6 +354,15 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
       }
+    });
+  }
+
+  // Show / hide the password while typing (easier for non-technical users)
+  const showPass = $("#show-pass");
+  const passField = $("#login-pass");
+  if (showPass && passField) {
+    showPass.addEventListener("change", () => {
+      passField.type = showPass.checked ? "text" : "password";
     });
   }
 
