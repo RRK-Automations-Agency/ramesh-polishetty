@@ -69,10 +69,18 @@ This creates the `photos` table with proper security rules.
 
 1. Go to **Authentication** → **Users**
 2. Click **Add user**
-3. Email: `admin@rameshpolisetty.com` (or your preferred email)
+3. Email: your admin email (e.g. `you@example.com`)
 4. Password: (choose a strong password)
 5. **Email Confirm**: Auto-confirm ✅
 6. Click **Create User**
+7. Run the migrations in `supabase/migrations/` in filename order in the **SQL
+   Editor**, ending with `20240101000003_secure_rls_admin_only.sql`.
+8. In that last migration, put your admin email where it says
+   `admin@example.com` and run section 5. This adds you to the `admins`
+   allowlist — the only accounts allowed to upload, edit or delete photos.
+   Check it worked: `SELECT email FROM public.admins;`
+9. Turn **OFF** "Allow new users to sign up" under **Authentication → Sign In /
+   Providers → Email**, so nobody else can create an account.
 
 ## Step 9: Get Your API Keys
 
@@ -96,11 +104,15 @@ Edit `config/config.json`:
   "SUPABASE_ANON_KEY": "YOUR_ANON_KEY_HERE",
   "BUCKET_NAME": "photos",
   "TABLE_NAME": "photos",
-  "WHATSAPP_NUMBER": "91XXXXXXXXXX"
+  "WHATSAPP_NUMBER": "91919963526973",
+  "PHONE_NUMBER": "+91 91996 3526973"
 }
 ```
 
-**Note:** Replace `WHATSAPP_NUMBER` with your WhatsApp number (country code + number, no spaces or +)
+**Note:** `WHATSAPP_NUMBER` is country code + number with no spaces or `+` (it
+feeds the `wa.me` links); `PHONE_NUMBER` is the human-readable number shown on the
+contact page. On Vercel both come from environment variables via
+`scripts/build-config.js`, so you normally never edit this file by hand.
 
 ## Step 11: Test It!
 

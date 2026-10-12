@@ -121,7 +121,7 @@ const Auth = {
     // Check if Supabase is configured
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
       return {
-        error: 'Supabase is not configured. Please set up your config.json with valid Supabase credentials.'
+        error: 'Authentication is not configured. Please contact the site administrator.'
       };
     }
 
@@ -143,15 +143,19 @@ const Auth = {
           return { error: 'Account locked due to too many failed attempts. Please try again later.' };
         }
 
-        // Provide helpful error messages
-        const errMsg = error.message || 'Unknown error';
-        if (errMsg.includes('Invalid login credentials')) {
-          return { error: `Invalid email or password. ${remaining} attempts remaining. If you haven't created an account yet, go to Supabase Dashboard > Authentication > Users and create one.` };
-        }
-        return { error: `Login failed: ${errMsg}. ${remaining} attempts remaining.` };
+        // Provide generic error message (do not reveal whether email exists)
+        return { error: `Invalid email or password. ${remaining} attempts remaining.` };
       }
 
       if (data && data.user) {
+        // Verify the user is on the admin allowlist
+        const isAdmin = await this.verifyAdmin(data.user);
+
+        if (!isAdmin) {
+          this.logout();
+          return { error: 'Access denied. You do not have administrator privileges.' };
+        }
+
         this.resetAttempts();
         this.setSession(data.user);
         return { success: true, user: data.user };
@@ -164,38 +168,10 @@ const Auth = {
     }
   },
 
-  /* ---------- user management (Supabase only) ---------- */
-  async createUser(email, password, metadata = {}) {
-    if (!window.getSupabaseClient || !window.getSupabaseClient()) {
-      return { error: 'Supabase is not configured.' };
-    }
-
-    if (!this.validateEmail(email)) {
-      return { error: 'Please enter a valid email address.' };
-    }
-    if (!this.validatePassword(password)) {
-      return { error: 'Password must be between 6 and 128 characters.' };
-    }
-
-    try {
-      const client = window.getSupabaseClient();
-      const { data, error } = await client.auth.signUp({
-        email: email,
-        password: password,
-        options: { data: metadata }
-      });
-
-      if (error) return { error: error.message };
-      return { success: true, user: data.user };
-    } catch (err) {
-      console.error('User creation error:', err);
-      return { error: 'Failed to create user.' };
-    }
-  },
-
+  /* ---------- password reset (Supabase only) ---------- */
   async resetPassword(email) {
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
-      return { error: 'Supabase is not configured.' };
+      return { error: 'Authentication is not configured.' };
     }
 
     if (!this.validateEmail(email)) {
@@ -208,11 +184,11 @@ const Auth = {
         redirectTo: window.location.origin + '/admin.html'
       });
 
-      if (error) return { error: error.message };
+      if (error) return { error: 'Failed to send reset email. Please try again.' };
       return { success: true };
     } catch (err) {
       console.error('Password reset error:', err);
-      return { error: 'Failed to send reset email.' };
+      return { error: 'Failed to send reset email. Please try again.' };
     }
   },
 
@@ -229,13 +205,60 @@ const Auth = {
           this.logout();
           return false;
         }
-        return true;
+        // Verify the user is on the admin allowlist
+        return await this.verifyAdmin(user);
       } catch {
         return false;
       }
     }
 
     return false;
+  },
+
+  /* ---------- admin verification ----------
+     The real security boundary is the database: the RLS policies in
+     supabase/migrations/20240101000003_secure_rls_admin_only.sql call
+     public.is_admin(), which reads the admin allowlist table.
+
+     This client-side check only decides whether to render the panel,
+     so it must never rely on user_metadata: raw_user_meta_data is
+     writable by the user themselves (supabase.auth.updateUser) and is
+     therefore forgeable.
+  --------------------------------------- */
+  async verifyAdmin(user) {
+    const client = window.getSupabaseClient && window.getSupabaseClient();
+    if (!client) return false;
+
+    let notDeployed = false;
+
+    try {
+      const { data, error } = await client.rpc('is_admin');
+
+      // The allowlist answered — this is authoritative.
+      if (!error) return data === true;
+
+      const detail = (error.code || '') + ' ' + (error.message || '');
+      notDeployed = /PGRST202|does not exist|Could not find the function/i.test(detail);
+
+      if (!notDeployed) {
+        // A real failure (network, revoked EXECUTE, ...) — refuse rather
+        // than guess.
+        console.warn('is_admin() failed (' + detail.trim() + ') — denying access.');
+        return false;
+      }
+    } catch (err) {
+      console.warn('is_admin() call failed:', err);
+      return false;
+    }
+
+    // Migration ...0003 has not been applied yet, so the allowlist cannot be
+    // enforced. The database is still on the permissive migration-002 policies,
+    // which means any authenticated user can already write through the API —
+    // the panel gate is consequently not a meaningful boundary in this state.
+    // Keep the panel usable (this matches the behaviour before this check
+    // existed) instead of locking the owner out, and say so loudly.
+    console.warn('is_admin() is not deployed yet — run supabase/migrations/20240101000003_secure_rls_admin_only.sql (and add your admin row) to enforce the allowlist. Using legacy access for now.');
+    return true;
   },
 
   /* ---------- utility ---------- */

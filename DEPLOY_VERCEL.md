@@ -44,7 +44,8 @@ Add these variables (copy values from your `config/config.json`):
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` (your full anon key) | Production, Preview |
 | `BUCKET_NAME` | `photos` | Production, Preview |
 | `TABLE_NAME` | `photos` | Production, Preview |
-| `WHATSAPP_NUMBER` | `919000000000` (your real number) | Production, Preview |
+| `WHATSAPP_NUMBER` | `91919963526973` — country code + number, no `+` or spaces | Production, Preview |
+| `PHONE_NUMBER` | `+91 91996 3526973` — shown on the contact page | Production, Preview |
 
 **How to find your Supabase keys:**
 1. Go to [app.supabase.com](https://app.supabase.com)
@@ -78,16 +79,42 @@ After adding env vars:
 
 1. Go to **Authentication** → **Users**
 2. Click **"Add user"**
-3. Email: `admin@rameshpolisetty.com` (or your email)
+3. Email: your admin email (e.g. `you@example.com`)
 4. Password: (choose a strong password)
 5. Email Confirm: **Auto-confirm** ✅
 6. Click **"Create User"**
 
 ---
 
-## Step 7: Verify Deployment
+## Step 7: Lock Down Writes (required)
 
-1. Open your Vercel URL (e.g., `https://ramesh-polisetty.vercel.app`)
+Run the migrations in `supabase/migrations/` **in filename order** in the Supabase
+SQL editor, ending with `20240101000003_secure_rls_admin_only.sql`.
+
+That last migration creates an `admins` allowlist table: gallery photos stay
+publicly readable, but only allowlisted accounts may upload, edit or delete.
+Open the file and replace the `admin@example.com` placeholder in section 5 with
+the email you just created, then run that statement. **Without a row in
+`admins`, `/admin.html` logs in but every write is rejected by RLS.**
+
+Then close public signups so nobody can register their own account:
+**Authentication → Sign In / Providers → Email → turn OFF "Allow new users to sign up".**
+
+Verify:
+
+```sql
+SELECT email, created_at FROM public.admins;   -- should list you
+```
+
+Until this migration is applied, neither the panel nor the database can enforce
+the allowlist (the panel logs a console warning and keeps working, matching the
+old behaviour). Run this step before sharing the admin URL with anyone.
+
+---
+
+## Step 8: Verify Deployment
+
+1. Open your Vercel URL (e.g., `https://your-project.vercel.app`)
 2. Check all pages load correctly
 3. Test admin panel: go to `/admin.html`
 4. Login with your admin credentials
@@ -95,10 +122,10 @@ After adding env vars:
 
 ---
 
-## Step 8: Custom Domain (Optional)
+## Step 9: Custom Domain (Optional)
 
 1. Go to **Settings** → **Domains**
-2. Enter your domain (e.g., `rameshpolisetty.com`)
+2. Enter your domain (e.g., `coachramesh.com`)
 3. Follow DNS configuration instructions
 4. Wait for SSL certificate (automatic)
 
@@ -115,9 +142,15 @@ After deployment, verify these work:
 | `.gitignore` protects config files | ✅ |
 | Security headers present | ✅ |
 | robots.txt blocks admin page | ✅ |
-| Rate limiting works (5 attempts) | ✅ |
+| Rate limiting works (5 attempts) | ✅ (client-side only) |
 | XSS protection in admin panel | ✅ |
 | Image compression before upload | ✅ |
+| Non-admin writes rejected by RLS | ✅ (after migration `...0003`) |
+| Public signups disabled in dashboard | ✅ (dashboard setting) |
+
+> The Supabase anon key in `config/config.json` is public by design — it ships in
+the browser bundle. RLS policies (`public.is_admin()` + the `admins` table), not
+key secrecy, are what protect the photos table and storage bucket.
 
 ---
 

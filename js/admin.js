@@ -1,10 +1,10 @@
 /* ============================================================
    RAMESH POLISETTY — admin panel
-   Secure login gate + photo upload manager.
+   Secure login gate + photo manager with dashboard, edit, search.
    Uses Supabase Auth for authentication (no hardcoded passwords).
    ============================================================ */
 
-/* ---------- DOM helpers (main.js not loaded on admin page) ---------- */
+/* ---------- DOM helpers ---------- */
 const $  = (s, c) => (c || document).querySelector(s);
 const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
 
@@ -14,34 +14,12 @@ function setLoggedIn(v) {
   if (!v && window.Auth) window.Auth.logout();
 }
 
-/* ---------- image processing: resize + compress before saving ---------- */
-function processImage(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onerror = () => resolve(null);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onerror = () => resolve(null);
-      img.onload = () => {
-        const MAX = 1280;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.75));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-/* ---------- storage info (Supabase) ---------- */
-function updateMeter() {
-  const label = $("#meter-label");
-  if (label) label.textContent = "Photos are stored in Supabase cloud storage — no local limits.";
+/* ---------- sanitize HTML to prevent XSS ---------- */
+function escapeHTML(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /* ---------- update supabase status ---------- */
@@ -69,23 +47,65 @@ function updateSupabaseStatus() {
   }
 }
 
-/* ---------- sanitize HTML to prevent XSS ---------- */
-function escapeHTML(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+/* ---------- dashboard stats ---------- */
+async function updateDashboardStats() {
+  const items = await GalleryData.load();
+  
+  const stats = {
+    total: items.length,
+    transformations: items.filter(i => i.cat === 'transformations').length,
+    achievements: items.filter(i => i.cat === 'achievements').length,
+    powerlifting: items.filter(i => i.cat === 'powerlifting').length,
+    coach: items.filter(i => i.cat === 'coach').length,
+    clients: items.filter(i => i.cat === 'clients').length
+  };
+  
+  const statTotal = $('#stat-total');
+  if (statTotal) statTotal.textContent = stats.total;
+  
+  const statTransformations = $('#stat-transformations');
+  if (statTransformations) statTransformations.textContent = stats.transformations;
+  
+  const statAchievements = $('#stat-achievements');
+  if (statAchievements) statAchievements.textContent = stats.achievements;
+  
+  const statPowerlifting = $('#stat-powerlifting');
+  if (statPowerlifting) statPowerlifting.textContent = stats.powerlifting;
+  
+  const statCoach = $('#stat-coach');
+  if (statCoach) statCoach.textContent = stats.coach;
+  
+  const statClients = $('#stat-clients');
+  if (statClients) statClients.textContent = stats.clients;
+}
+
+/* ---------- search functionality ---------- */
+let allItems = [];
+
+function filterItems(query) {
+  if (!query || !query.trim()) return allItems;
+  const q = query.toLowerCase().trim();
+  return allItems.filter(item =>
+    (item.label && item.label.toLowerCase().includes(q)) ||
+    (item.cat && item.cat.toLowerCase().includes(q)) ||
+    (item.note && item.note.toLowerCase().includes(q))
+  );
 }
 
 /* ---------- admin list ---------- */
-async function renderList() {
-  const items = await GalleryData.load();
+async function renderList(searchQuery) {
+  allItems = await GalleryData.load();
+  const items = searchQuery ? filterItems(searchQuery) : allItems;
   const list = $("#admin-list");
   list.innerHTML = "";
+  
   if (!items.length) {
-    list.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">No photos yet. Add your first one above.</p>';
+    list.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">' +
+      (searchQuery ? 'No photos match your search.' : 'No photos yet. Add your first one above.') +
+      '</p>';
     return;
   }
+  
   items.forEach((item) => {
     const el = document.createElement("div");
     el.className = "admin-item";
@@ -95,29 +115,116 @@ async function renderList() {
         : '<div class="a-ph">📸</div>') +
       '<div class="a-meta"><b>' + escapeHTML(item.label) + '</b><span>' + escapeHTML(item.cat) + '</span>' +
       (item.note ? '<p>' + escapeHTML(item.note) + '</p>' : '') + '</div>' +
-      '<button class="del" title="Delete">✕</button>';
+      '<div class="admin-item-actions">' +
+      '<button class="edit" title="Edit">✎</button>' +
+      '<button class="del" title="Delete">✕</button>' +
+      '</div>';
+    
+    // Edit button
+    el.querySelector(".edit").addEventListener("click", () => openEditModal(item));
+    
+    // Delete button with confirmation
     el.querySelector(".del").addEventListener("click", async () => {
-      if (!confirm('Delete "' + escapeHTML(item.label) + '"?')) return;
+      const confirmed = confirm('Delete "' + item.label + '"?\n\nThis action cannot be undone.');
+      if (!confirmed) return;
       
       const status = $("#upload-status");
       
-      // Try Supabase delete first
       if (window.getSupabaseClient && window.getSupabaseClient()) {
         const result = await GalleryData.deleteFromSupabase(item);
         if (result.error) {
-          alert('Delete failed: ' + result.error);
+          if (status) {
+            status.textContent = 'Delete failed: ' + result.error;
+            status.style.color = 'var(--danger)';
+          }
           return;
         }
       }
       
-      renderList();
+      renderList($("#admin-search") ? $("#admin-search").value : '');
+      updateDashboardStats();
       if (status) {
         status.textContent = 'Photo deleted successfully.';
         status.style.color = 'var(--success)';
+        setTimeout(() => { status.textContent = ''; }, 3000);
       }
     });
+    
     list.appendChild(el);
   });
+}
+
+/* ---------- edit modal ---------- */
+function openEditModal(item) {
+  const modal = $('#edit-modal');
+  if (!modal) return;
+  
+  $('#edit-id').value = item.id;
+  $('#edit-file-name').value = item.file_name || '';
+  $('#edit-label').value = item.label || '';
+  $('#edit-cat').value = item.cat || 'transformations';
+  $('#edit-note').value = item.note || '';
+  $('#edit-status').textContent = '';
+  
+  modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+  const modal = $('#edit-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleEditSave(e) {
+  e.preventDefault();
+  
+  const id = $('#edit-id').value;
+  const label = $('#edit-label').value.trim();
+  const cat = $('#edit-cat').value;
+  const note = $('#edit-note').value.trim();
+  const status = $('#edit-status');
+  
+  if (!label) {
+    status.textContent = 'Label is required.';
+    status.style.color = 'var(--danger)';
+    return;
+  }
+  
+  if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+    status.textContent = 'Supabase is not configured.';
+    status.style.color = 'var(--danger)';
+    return;
+  }
+  
+  const saveBtn = $('#edit-save');
+  if (saveBtn) { saveBtn.textContent = 'Saving...'; saveBtn.disabled = true; }
+  
+  try {
+    const client = window.getSupabaseClient();
+    const { error } = await client
+      .from(window.SUPABASE_CONFIG.tableName)
+      .update({ label, category: cat, note })
+      .eq('id', id);
+    
+    if (error) {
+      status.textContent = 'Update failed: ' + error.message;
+      status.style.color = 'var(--danger)';
+      return;
+    }
+    
+    status.textContent = 'Saved successfully!';
+    status.style.color = 'var(--success)';
+    
+    setTimeout(() => {
+      closeEditModal();
+      renderList($("#admin-search") ? $("#admin-search").value : '');
+      updateDashboardStats();
+    }, 800);
+  } catch (err) {
+    status.textContent = 'An error occurred. Please try again.';
+    status.style.color = 'var(--danger)';
+  } finally {
+    if (saveBtn) { saveBtn.textContent = 'Save Changes'; saveBtn.disabled = false; }
+  }
 }
 
 /* ---------- upload (Supabase only) ---------- */
@@ -129,9 +236,8 @@ async function handleUpload(files) {
 
   const status = $("#upload-status");
 
-  // Check Supabase is available
   if (!window.getSupabaseClient || !window.getSupabaseClient()) {
-    status.textContent = "Supabase is not configured. Please check config/config.json.";
+    status.textContent = "Supabase is not configured.";
     status.style.color = "var(--danger)";
     return;
   }
@@ -151,10 +257,11 @@ async function handleUpload(files) {
     added++;
   }
 
-  status.textContent = added + " photo(s) uploaded to Supabase cloud!";
+  status.textContent = added + " photo(s) uploaded successfully!";
   status.style.color = "var(--success)";
 
-  renderList();
+  renderList($("#admin-search") ? $("#admin-search").value : '');
+  updateDashboardStats();
   $("#a-label").value = ""; $("#a-note").value = ""; $("#a-files").value = "";
 }
 
@@ -163,7 +270,7 @@ async function showPanel() {
   $("#login-view").style.display = "none";
   $("#panel-view").style.display = "block";
   await renderList();
-  updateMeter();
+  updateDashboardStats();
   updateSupabaseStatus();
 }
 
@@ -196,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Login form
   const loginForm = $("#login-form");
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
@@ -223,11 +331,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (result.success) {
           err.textContent = "Login successful! Loading panel...";
           err.className = "err success";
-          
-          if (result.message) {
-            err.textContent += " " + result.message;
-          }
-          
           setTimeout(() => showPanel(), 800);
         } else {
           err.textContent = result.error;
@@ -246,9 +349,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Logout
   const logout = $("#logout");
   if (logout) logout.addEventListener("click", () => { setLoggedIn(false); location.reload(); });
 
+  // Forgot password
   const forgotPassword = $("#forgot-password");
   if (forgotPassword) {
     forgotPassword.addEventListener("click", async (e) => {
@@ -269,6 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Upload form
   const uploadForm = $("#upload-form");
   if (uploadForm) {
     uploadForm.addEventListener("submit", (e) => {
@@ -288,4 +394,49 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
+  // Search
+  const searchInput = $("#admin-search");
+  const searchClear = $("#search-clear");
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderList(searchInput.value);
+        if (searchClear) searchClear.style.display = searchInput.value ? 'inline-flex' : 'none';
+      }, 300);
+    });
+  }
+  if (searchClear) {
+    searchClear.addEventListener("click", () => {
+      const searchInput = $("#admin-search");
+      if (searchInput) searchInput.value = '';
+      searchClear.style.display = 'none';
+      renderList('');
+    });
+  }
+
+  // Edit modal
+  const editForm = $("#edit-form");
+  if (editForm) editForm.addEventListener("submit", handleEditSave);
+  
+  const editClose = $("#edit-close");
+  if (editClose) editClose.addEventListener("click", closeEditModal);
+  
+  const editCancel = $("#edit-cancel");
+  if (editCancel) editCancel.addEventListener("click", closeEditModal);
+  
+  // Close modal on backdrop click
+  const editModal = $("#edit-modal");
+  if (editModal) {
+    editModal.addEventListener("click", (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
+  }
+  
+  // Close modal on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeEditModal();
+  });
 });

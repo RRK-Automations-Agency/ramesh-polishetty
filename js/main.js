@@ -7,7 +7,7 @@ const $  = (s, c) => (c || document).querySelector(s);
 const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
 
 /* ---------- load config.json (for WhatsApp number etc.) ---------- */
-let SITE_CONFIG = { whatsappNumber: "919000000000" };
+let SITE_CONFIG = { whatsappNumber: "91919963526973", phoneNumber: "+91 91996 3526973" };
 
 async function loadSiteConfig() {
   try {
@@ -15,6 +15,7 @@ async function loadSiteConfig() {
     if (res.ok) {
       const data = await res.json();
       SITE_CONFIG.whatsappNumber = data.WHATSAPP_NUMBER || SITE_CONFIG.whatsappNumber;
+      SITE_CONFIG.phoneNumber = data.PHONE_NUMBER || SITE_CONFIG.phoneNumber;
     }
   } catch (e) {
     // config.json not found, use defaults

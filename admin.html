@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
 <title>Admin Panel — Ramesh Polisetty</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v5" />
+<link rel="stylesheet" href="css/styles.css?v6" />
 </head>
 <body data-page="admin">
 
 <header class="admin-bar">
   <div class="wrap admin-bar-in">
     <div class="brand">Ramesh<span>.</span>Polisetty <i>· Admin</i></div>
-    <a href="index.html" class="btn btn-ghost btn-sm">View site</a>
+    <div class="admin-bar-actions">
+      <a href="index.html" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">View site</a>
+    </div>
   </div>
 </header>
 
@@ -31,7 +34,7 @@
     <form id="login-form">
       <div class="field">
         <label for="login-email">Email</label>
-        <input id="login-email" type="email" placeholder="admin@rameshpolisetty.com" required autocomplete="email" />
+        <input id="login-email" type="email" placeholder="admin@example.com" required autocomplete="email" />
       </div>
       <div class="field">
         <label for="login-pass">Password</label>
@@ -53,25 +56,63 @@
     <div class="login-links">
       <a href="#" id="forgot-password">Forgot password?</a>
     </div>
-
-    <div class="login-meta">
-      🔒 Authentication powered by Supabase Auth<br />
-      📷 Photos are stored in Supabase cloud storage<br />
-      ✅ <strong>Step 1:</strong> Create a user in <a href="https://app.supabase.com" target="_blank">Supabase Dashboard</a> → Authentication → Users → Add user<br />
-      ✅ <strong>Step 2:</strong> Enter that email & password here to login<br />
-      ⚠️ <strong>No offline mode</strong> — Supabase account is required
-    </div>
   </div>
 
   <!-- ==================== PANEL VIEW ==================== -->
   <div id="panel-view" style="display:none;">
 
+    <!-- Dashboard Stats -->
     <div class="admin-head">
-      <h1>Photo <span>manager</span></h1>
+      <h1>Admin <span>Dashboard</span></h1>
       <div class="admin-head-actions">
         <span id="supabase-status" class="admin-status">Checking Supabase...</span>
         <button id="logout" class="btn btn-ghost btn-sm">Log out</button>
-        <a href="gallery.html" class="btn btn-accent btn-sm">View gallery</a>
+        <a href="gallery.html" class="btn btn-accent btn-sm" target="_blank" rel="noopener">View gallery</a>
+      </div>
+    </div>
+
+    <div class="admin-stats" id="admin-stats">
+      <div class="stat-card">
+        <div class="stat-ico">📷</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-total">—</div>
+          <div class="stat-label">Total Photos</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">🔄</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-transformations">—</div>
+          <div class="stat-label">Transformations</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">🏆</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-achievements">—</div>
+          <div class="stat-label">Achievements</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">💪</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-powerlifting">—</div>
+          <div class="stat-label">Powerlifting</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">👤</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-coach">—</div>
+          <div class="stat-label">Coach</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">💬</div>
+        <div class="stat-info">
+          <div class="stat-num" id="stat-clients">—</div>
+          <div class="stat-label">Clients</div>
+        </div>
       </div>
     </div>
 
@@ -113,10 +154,10 @@
       </form>
     </div>
 
-    <!-- Storage Meter -->
-    <div class="meter mb-3">
-      <div class="bar"><i id="meter-bar"></i></div>
-      <p id="meter-label"></p>
+    <!-- Search Bar -->
+    <div class="admin-search">
+      <input id="admin-search" type="text" placeholder="Search photos by label, category, or note..." />
+      <button id="search-clear" class="btn btn-ghost btn-sm" style="display:none;">Clear</button>
     </div>
 
     <!-- Saved Photos -->
@@ -124,42 +165,50 @@
     <div class="admin-list" id="admin-list"></div>
   </div>
 
+  <!-- ==================== EDIT MODAL ==================== -->
+  <div id="edit-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Photo</h3>
+        <button class="modal-close" id="edit-close">&times;</button>
+      </div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-id" />
+        <input type="hidden" id="edit-file-name" />
+        <div class="field">
+          <label for="edit-label">Label</label>
+          <input id="edit-label" type="text" required />
+        </div>
+        <div class="field">
+          <label for="edit-cat">Category</label>
+          <select id="edit-cat">
+            <option value="transformations">Transformations</option>
+            <option value="achievements">Achievements</option>
+            <option value="powerlifting">Powerlifting</option>
+            <option value="coach">Coach</option>
+            <option value="clients">Clients</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="edit-note">Note (optional)</label>
+          <input id="edit-note" type="text" />
+        </div>
+        <p id="edit-status" class="upload-status"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="edit-cancel">Cancel</button>
+          <button type="submit" class="btn btn-accent" id="edit-save">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </div>
 
-<script src="js/supabase-config.js?v5"></script>
+<script src="js/supabase-config.js?v6"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/auth.js?v5"></script>
-<script src="js/gallery.js?v5"></script>
-<script src="js/admin.js?v5"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    // Show badge immediately
-    const badge = document.getElementById('auth-badge');
-    if (badge) {
-      badge.className = 'auth-badge offline';
-      badge.innerHTML = '\uD83D\udcbe Connecting...';
-    }
-
-    // Load config + init Supabase
-    try {
-      if (window.loadConfig) await window.loadConfig();
-    } catch (e) { console.error('Config load error:', e); }
-    try {
-      if (window.initSupabase) await window.initSupabase();
-    } catch (e) { console.error('Supabase init error:', e); }
-
-    // Update badge with final status
-    if (badge) {
-      const isOnline = window.isConfigValid && window.isConfigValid();
-      if (isOnline) {
-        badge.className = 'auth-badge cloud';
-        badge.innerHTML = '\u2601\ufe0f <strong>Supabase Connected</strong> \u2014 Login with your Supabase account credentials.';
-      } else {
-        badge.className = 'auth-badge offline';
-        badge.innerHTML = '\u274c <strong>Supabase Not Configured</strong> \u2014 Please add your credentials to config/config.json first.';
-      }
-    }
-  });
-</script>
+<script src="js/auth.js?v6"></script>
+<script src="js/gallery.js?v6"></script>
+<script src="js/admin.js?v6"></script>
+<script src="js/admin-boot.js?v6"></script>
 </body>
 </html>

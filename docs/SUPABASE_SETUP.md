@@ -20,10 +20,13 @@ This website uses Supabase for cloud photo storage. Photos can be managed direct
 3. Go to **Authentication** → **Users**
 4. Click **Add user**
 5. Create an admin user:
-   - Email: `admin@rameshpolisetty.com` (or your preferred email)
+   - Email: your admin email (e.g. `you@example.com`)
    - Password: Choose a strong password
    - Email Confirm: **Auto-confirm** (for easier setup)
 6. Click **Create user**
+7. Turn **OFF** "Allow new users to sign up" (Authentication → Sign In / Providers →
+   Email). Otherwise anyone can register, and any leftover permissive policy
+   becomes reachable by strangers.
 
 ### 4. Create Storage Bucket
 1. Go to **Storage** in your Supabase dashboard
@@ -33,6 +36,15 @@ This website uses Supabase for cloud photo storage. Photos can be managed direct
 5. Click **Create bucket**
 
 ### 6. Create Database Table
+
+> **Prefer the migrations.** `supabase/migrations/` is the source of truth: run
+> `20240101000000` → `20240101000001` → `20240101000002` → `20240101000003` in
+> filename order in the SQL editor. Migration `...0003` adds the admin allowlist
+> (`public.admins` + `public.is_admin()`) that gates every write to the photos
+> table and the storage bucket; add your admin email to it (section 5 of that
+> file) or the admin panel will refuse to save anything. The SQL below is the
+> minimal hand-rolled equivalent, for reference only.
+
 1. Go to **SQL Editor** in your Supabase dashboard
 2. Run this SQL:
 
