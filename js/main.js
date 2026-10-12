@@ -9,12 +9,24 @@ const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
 /* ---------- load config.json (for WhatsApp number etc.) ---------- */
 let SITE_CONFIG = { whatsappNumber: "919963526973", phoneNumber: "+91 9963526973" };
 
+/* A build that never received the real number ships a placeholder such as
+   919000000000. Sending visitors to a dead line is worse than ignoring the
+   setting, so only accept a plausible number. */
+function isRealWhatsAppNumber(value) {
+  const digits = String(value == null ? "" : value).replace(/\D/g, "");
+  return /^\d{10,15}$/.test(digits) && !/0{6,}/.test(digits);
+}
+
 async function loadSiteConfig() {
   try {
     const res = await fetch('/config/config.json');
     if (res.ok) {
       const data = await res.json();
-      SITE_CONFIG.whatsappNumber = data.WHATSAPP_NUMBER || SITE_CONFIG.whatsappNumber;
+      if (isRealWhatsAppNumber(data.WHATSAPP_NUMBER)) {
+        SITE_CONFIG.whatsappNumber = String(data.WHATSAPP_NUMBER).replace(/\D/g, "");
+      } else if (data.WHATSAPP_NUMBER) {
+        console.warn('Ignoring placeholder WHATSAPP_NUMBER (set the real one in the deployment env):', data.WHATSAPP_NUMBER);
+      }
       SITE_CONFIG.phoneNumber = data.PHONE_NUMBER || SITE_CONFIG.phoneNumber;
     }
   } catch (e) {
