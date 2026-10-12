@@ -237,12 +237,30 @@ async function handleEditSave(e) {
 
 /* ---------- upload (Supabase only) ---------- */
 async function handleUpload(files) {
-  const label = $("#a-label").value.trim() || "Transformation photo";
+  const label = $("#a-label").value.trim();
   const cat   = $("#a-cat").value;
   const note  = $("#a-note").value.trim();
-  if (!files.length) { alert("Choose at least one photo."); return; }
-
   const status = $("#upload-status");
+
+  if (!files.length) {
+    if (status) {
+      status.textContent = "Choose a photo first — step 4 below.";
+      status.style.color = "var(--danger)";
+    }
+    return;
+  }
+
+  // A missing title used to be saved as "Transformation photo", which is
+  // useless once several photos are named the same — ask instead of guessing.
+  if (!label) {
+    if (status) {
+      status.textContent = "Type a photo title in step 1 first — then press \"Upload the selected photo\".";
+      status.style.color = "var(--danger)";
+    }
+    const titleField = $("#a-label");
+    if (titleField) titleField.focus();
+    return;
+  }
 
   if (!window.getSupabaseClient || !window.getSupabaseClient()) {
     status.textContent = "Supabase is not configured.";
