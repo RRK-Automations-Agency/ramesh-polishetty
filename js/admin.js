@@ -385,12 +385,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileInput = $("#a-files");
     
     if (zone) {
-      zone.addEventListener("click", () => fileInput.click());
+      zone.addEventListener("click", (e) => {
+        e.preventDefault();
+        fileInput.click();
+      });
       zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("drag"); });
       zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
       zone.addEventListener("drop", (e) => {
         e.preventDefault(); zone.classList.remove("drag");
         if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files);
+      });
+      zone.setAttribute("tabindex", "0");
+      zone.setAttribute("role", "button");
+      zone.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          fileInput.click();
+        }
       });
     }
   }

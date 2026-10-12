@@ -254,11 +254,21 @@ async function initGallery(container) {
   const items = isNaN(max) ? all : all.slice(0, max);
 
   container.__all = all;
-  container.__items = items;
-  renderCards(container, items);
 
   if (container.dataset.filters) {
-    bindFilters(document.querySelector(container.dataset.filters), container);
+    const bar = document.querySelector(container.dataset.filters);
+    const activeBtn = bar ? bar.querySelector(".filter.active") : null;
+    const activeFilter = activeBtn ? activeBtn.dataset.filter : null;
+    if (activeFilter && activeFilter !== "all") {
+      container.__items = all.filter((i) => i.cat === activeFilter);
+    } else {
+      container.__items = items;
+    }
+    renderCards(container, container.__items);
+    bindFilters(bar, container);
+  } else {
+    container.__items = items;
+    renderCards(container, container.__items);
   }
 }
 

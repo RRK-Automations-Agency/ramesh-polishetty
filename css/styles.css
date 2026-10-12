@@ -348,6 +348,11 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
    GALLERY — masonry columns
    ============================================================ */
 .filters{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:30px; }
+@media (max-width:640px){
+  .filters{ flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .filters::-webkit-scrollbar{ display:none; }
+  .filter{ flex-shrink:0; font-size:12px; padding:8px 12px; }
+}
 .filter{
   background:var(--card); border:1px solid var(--line-2); color:var(--muted);
   padding:9px 17px; border-radius:999px; font-size:14px; font-weight:500; transition:.2s;
