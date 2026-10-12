@@ -23,8 +23,8 @@ const config = {
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
   BUCKET_NAME: process.env.BUCKET_NAME || 'photos',
   TABLE_NAME: process.env.TABLE_NAME || 'photos',
-  WHATSAPP_NUMBER: process.env.WHATSAPP_NUMBER || '91919963526973',
-  PHONE_NUMBER: process.env.PHONE_NUMBER || '+91 91996 3526973'
+  WHATSAPP_NUMBER: process.env.WHATSAPP_NUMBER || '919963526973',
+  PHONE_NUMBER: process.env.PHONE_NUMBER || '+91 9963526973'
 };
 
 const configDir = path.join(__dirname, '..', 'config');

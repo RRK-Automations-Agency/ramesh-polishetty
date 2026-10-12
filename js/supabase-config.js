@@ -9,8 +9,8 @@ const DEFAULT_CONFIG = {
   anonKey: '',
   bucketName: 'photos',
   tableName: 'photos',
-  phoneNumber: '+91 91996 3526973',
-  whatsappNumber: '91919963526973'
+  phoneNumber: '+91 9963526973',
+  whatsappNumber: '919963526973'
 };
 
 // Loaded configuration
@@ -31,8 +31,8 @@ async function loadConfig() {
         anonKey: data.SUPABASE_ANON_KEY || '',
         bucketName: data.BUCKET_NAME || 'photos',
         tableName: data.TABLE_NAME || 'photos',
-        phoneNumber: data.PHONE_NUMBER || '+91 91996 3526973',
-        whatsappNumber: data.WHATSAPP_NUMBER || '91919963526973'
+        phoneNumber: data.PHONE_NUMBER || '+91 9963526973',
+        whatsappNumber: data.WHATSAPP_NUMBER || '919963526973'
       };
       window.SUPABASE_CONFIG = SUPABASE_CONFIG;
       configLoaded = true;

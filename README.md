@@ -73,8 +73,8 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 BUCKET_NAME=photos
 TABLE_NAME=photos
-WHATSAPP_NUMBER=91919963526973
-PHONE_NUMBER=+91 91996 3526973
+WHATSAPP_NUMBER=919963526973
+PHONE_NUMBER=+91 9963526973
 ```
 
 The generated file looks like this (`config/config.example.json` is the template):
@@ -85,8 +85,8 @@ The generated file looks like this (`config/config.example.json` is the template
   "SUPABASE_ANON_KEY": "your-anon-key",
   "BUCKET_NAME": "photos",
   "TABLE_NAME": "photos",
-  "WHATSAPP_NUMBER": "91919963526973",
-  "PHONE_NUMBER": "+91 91996 3526973"
+  "WHATSAPP_NUMBER": "919963526973",
+  "PHONE_NUMBER": "+91 9963526973"
 }
 ```
 

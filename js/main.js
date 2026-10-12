@@ -7,7 +7,7 @@ const $  = (s, c) => (c || document).querySelector(s);
 const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
 
 /* ---------- load config.json (for WhatsApp number etc.) ---------- */
-let SITE_CONFIG = { whatsappNumber: "91919963526973", phoneNumber: "+91 91996 3526973" };
+let SITE_CONFIG = { whatsappNumber: "919963526973", phoneNumber: "+91 9963526973" };
 
 async function loadSiteConfig() {
   try {

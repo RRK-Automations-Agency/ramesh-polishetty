@@ -44,8 +44,8 @@ Add these variables (copy values from your `config/config.json`):
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` (your full anon key) | Production, Preview |
 | `BUCKET_NAME` | `photos` | Production, Preview |
 | `TABLE_NAME` | `photos` | Production, Preview |
-| `WHATSAPP_NUMBER` | `91919963526973` — country code + number, no `+` or spaces | Production, Preview |
-| `PHONE_NUMBER` | `+91 91996 3526973` — shown on the contact page | Production, Preview |
+| `WHATSAPP_NUMBER` | `919963526973` — country code + number, no `+` or spaces | Production, Preview |
+| `PHONE_NUMBER` | `+91 9963526973` — shown on the contact page | Production, Preview |
 
 **How to find your Supabase keys:**
 1. Go to [app.supabase.com](https://app.supabase.com)
