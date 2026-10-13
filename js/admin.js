@@ -239,6 +239,18 @@ async function persistOrder(list) {
   return { saved: updates.length, error: null };
 }
 
+/* A missing display_order column means migration 004 has not been applied to
+   this database yet. Explain that plainly instead of showing the raw
+   Postgres error, because the fix is one paste into the Supabase SQL editor. */
+function orderSaveHint(error) {
+  const msg = (error && error.message) ? error.message : String(error || '');
+  if (/display_order/.test(msg) && /does not exist/i.test(msg)) {
+    return 'This database is missing the photo-order column. Run '
+      + 'supabase/migrations/20240101000004_add_display_order.sql in the Supabase SQL editor, then try again.';
+  }
+  return msg;
+}
+
 /* Shared save + re-render + status line for every reorder action. */
 async function applyOrder(list, position) {
   allItems = list;
@@ -247,7 +259,7 @@ async function applyOrder(list, position) {
 
   if (error) {
     if (status) {
-      status.textContent = "Could not save the new order: " + error;
+      status.textContent = "Could not save the new order: " + orderSaveHint(error);
       status.style.color = "var(--danger)";
     }
   } else if (status) {
@@ -407,7 +419,7 @@ async function handleEditSave(e) {
       if (currentIdx >= 0 && currentIdx !== order - 1) {
         const move = await moveItemToPosition(id, order);
         if (move.error) {
-          status.textContent = 'Details saved, but the new position could not be saved: ' + move.error;
+          status.textContent = 'Details saved, but the new position could not be saved: ' + orderSaveHint(move.error);
           status.style.color = 'var(--danger)';
           return;
         }
@@ -483,7 +495,7 @@ async function handleOrderSave(e) {
   try {
     const result = await moveItemToPosition(id, requested);
     if (result.error) {
-      statusEl.textContent = 'Could not save: ' + result.error;
+      statusEl.textContent = 'Could not save: ' + orderSaveHint(result.error);
       statusEl.style.color = 'var(--danger)';
       return;
     }
@@ -580,6 +592,8 @@ async function resetOrderByDate(direction) {
   if (!allItems.length) return;
 
   const list = [...allItems].sort((a, b) => {
+    // Newest/oldest first is the order the site used before manual ordering,
+    // so it also rescues a database where display_order is still all zeros.
     const ta = String(a.created_at || '');
     const tb = String(b.created_at || '');
     return direction === 1 ? tb.localeCompare(ta) : ta.localeCompare(tb);
@@ -591,7 +605,7 @@ async function resetOrderByDate(direction) {
 
   if (status) {
     if (error) {
-      status.textContent = "Could not save the new order: " + error;
+      status.textContent = "Could not save the new order: " + orderSaveHint(error);
       status.style.color = "var(--danger)";
     } else {
       status.textContent = "All " + list.length + " photos are now in " +
