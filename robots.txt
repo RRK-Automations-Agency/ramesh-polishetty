@@ -7,5 +7,10 @@ Disallow: /config/
 Disallow: /js/auth.js
 Disallow: /js/supabase-config.js
 
+# Internal notes for whoever maintains the site - not for visitors or search.
+# vercel.json publishes the repository root, so anything committed here is
+# reachable at its path; this only asks crawlers to stay out.
+Disallow: /docs/
+
 # Sitemap
 Sitemap: https://www.coachramesh.com/sitemap.xml
