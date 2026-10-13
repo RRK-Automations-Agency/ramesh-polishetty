@@ -575,13 +575,22 @@ async function handleEditSave(e) {
   try {
     const client = window.getSupabaseClient();
     const updates = { label, category: cat, note };
-    const { error } = await client
+    // Ask for the row back: an UPDATE that matched nothing comes back empty
+    // instead of as an error, which would otherwise be reported as "saved".
+    const { data, error } = await client
       .from(window.SUPABASE_CONFIG.tableName)
       .update(updates)
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
 
     if (error) {
       status.textContent = 'Update failed: ' + error.message;
+      status.style.color = 'var(--danger)';
+      return;
+    }
+
+    if (!data || !data.length) {
+      status.textContent = 'Update failed: ' + UPDATE_REFUSED_HINT;
       status.style.color = 'var(--danger)';
       return;
     }
