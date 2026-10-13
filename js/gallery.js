@@ -3,12 +3,39 @@
    Reads photos from Supabase, with a local cache fallback.
    Loaded on pages that contain a [data-gallery] element.
 
-   Photo order: every row carries a numeric `display_order` that the
+   Photo order: every row may carry a numeric `display_order` that the
    admin panel writes (see js/admin.js). Smaller numbers come first;
    rows that still carry the default 0 keep their old created-at
-   ordering. When the column is missing (migration not applied yet)
-   the whole thing degrades to created-at order instead of failing.
+   ordering.
+
+   The column is optional. PostgREST rejects ANY request that names a
+   column the database does not have — 42703 for reads ("column
+   photos.display_order does not exist") and PGRST204 for writes ("Could
+   not find the 'display_order' column of 'photos' in the schema cache")
+   — so a database that has not run migration 004 must never be asked
+   about it. GalleryData.hasOrderColumn() probes the column once per page
+   load and every read/write goes through it, falling back to created-at
+   order when the column is absent.
    ============================================================ */
+
+/* ---------- the optional ordering column ---------- */
+const ORDER_COLUMN = 'display_order';
+
+/* Both PostgREST shapes of "this database has no display_order column":
+   
+     { code: '42703',   message: 'column photos.display_order does not exist' }              (read)
+     { code: 'PGRST204', message: "Could not find the 'display_order' column of 'photos'" }   (write)
+
+   The codes are stable, the wording is not, so trust the code first and
+   only fall back to the message. Matching text alone is what broke this
+   before: the old check looked for a *quoted* "display_order" that
+   PostgREST never sends, so the fallback never ran. */
+function isMissingOrderColumn(error) {
+  const code = (error && error.code) || '';
+  if (code === '42703' || code === 'PGRST204') return true;
+  const msg = (error && (error.message || error.details)) || String(error || '');
+  return /display_order/i.test(msg) && /(does not exist|schema cache)/i.test(msg);
+}
 
 /* Local cache key for photo items */
 const GalleryData = {
@@ -47,6 +74,36 @@ const GalleryData = {
     { id: "d8", src: "", cat: "clients", label: "Client — Goal achieved", note: "" }
   ],
 
+  /* Exposed so js/admin.js maps errors the same way. */
+  isMissingOrderColumn,
+
+  /* Cached answer to "does this database have display_order?" — null means
+     not asked yet. One cheap limit-1 read answers it for the whole page
+     load, so an un-migrated database costs exactly one 400 and then every
+     later read/write stays clean. */
+  _orderColumn: null,
+
+  async hasOrderColumn() {
+    if (this._orderColumn !== null) return this._orderColumn;
+
+    const client = window.getSupabaseClient && window.getSupabaseClient();
+    if (!client) { this._orderColumn = false; return false; }
+
+    const { error } = await client
+      .from(window.SUPABASE_CONFIG.tableName)
+      .select(ORDER_COLUMN)
+      .limit(1);
+
+    this._orderColumn = !error;
+    if (error && isMissingOrderColumn(error)) {
+      console.warn('display_order is not in this database yet — using created-at order. '
+        + 'Run supabase/migrations/20240101000004_add_display_order.sql to enable a custom order.');
+    } else if (error) {
+      console.warn('display_order probe failed:', error.message || error);
+    }
+    return this._orderColumn;
+  },
+
   /* Photos are ordered by display_order first, then newest first, and the
      sort is redone client side so an installed-without-the-column database
      still ends up in a sensible sequence. Array#sort is stable, so rows
@@ -61,21 +118,24 @@ const GalleryData = {
     if (window.getSupabaseClient && window.getSupabaseClient()) {
       try {
         const client = window.getSupabaseClient();
-        const { data, error } = await client
-          .from(window.SUPABASE_CONFIG.tableName)
-          .select('*')
-          .order('display_order', { ascending: true, nullsFirst: false })
-          .order('created_at', { ascending: false });
+        const table = window.SUPABASE_CONFIG.tableName;
+
+        // Ask before ordering: on a database without the column, naming it
+        // in the query fails the whole read and the gallery goes empty.
+        const hasOrder = await this.hasOrderColumn();
+        const base = client.from(table).select('*');
+        const { data, error } = await (hasOrder
+          ? base.order(ORDER_COLUMN, { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
+          : base.order('created_at', { ascending: false }));
 
         if (error) {
-          // If the migration has not been applied yet, display_order is
-          // missing. Fall back to created_at order instead of surfacing an
-          // error — the gallery still works, just without a custom order.
-          const isMissingColumn = /column "display_order" does not exist/i.test(error.message || '');
-          if (isMissingColumn) {
-            console.warn('display_order not available — falling back to created_at order.');
+          // The probe said the column exists but this database disagrees —
+          // a stale PostgREST schema cache right after the migration ran.
+          // Retry once without it so the photos still show up.
+          if (isMissingOrderColumn(error)) {
+            this._orderColumn = false;
             const { data: fb, error: fbErr } = await client
-              .from(window.SUPABASE_CONFIG.tableName)
+              .from(table)
               .select('*')
               .order('created_at', { ascending: false });
             if (!fbErr && fb) return fb.map((row) => this._normalizeItem(row));
@@ -136,7 +196,9 @@ const GalleryData = {
       .getPublicUrl(fileName);
 
     // Save metadata to database. display_order is written only when the
-    // caller supplied one, so an un-migrated database still accepts the row.
+    // caller supplied one AND this database has the column — an insert that
+    // mentions a missing column is rejected with PGRST204, which is what
+    // broke uploading. Ask first, then include it.
     const row = {
       image_url: urlData.publicUrl,
       category: metadata.cat,
@@ -144,14 +206,22 @@ const GalleryData = {
       note: metadata.note,
       file_name: fileName
     };
-    if (metadata.order != null) row.display_order = metadata.order;
+    if (metadata.order != null && await this.hasOrderColumn()) {
+      row.display_order = metadata.order;
+    }
 
     const { data: dbData, error: dbError } = await client
       .from(window.SUPABASE_CONFIG.tableName)
       .insert(row)
       .select();
 
-    if (dbError) return { error: dbError.message };
+    if (dbError) {
+      if (isMissingOrderColumn(dbError)) {
+        return { error: 'This database has no photo-order column yet, so the photo was not saved. '
+          + 'Run supabase/migrations/20240101000004_add_display_order.sql in the Supabase SQL editor and try again.' };
+      }
+      return { error: dbError.message };
+    }
 
     return { data: dbData[0] };
   },

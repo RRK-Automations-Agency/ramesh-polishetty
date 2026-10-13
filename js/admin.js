@@ -242,12 +242,25 @@ async function persistOrder(list) {
 /* A missing display_order column means migration 004 has not been applied to
    this database yet. Explain that plainly instead of showing the raw
    Postgres error, because the fix is one paste into the Supabase SQL editor. */
+const MISSING_ORDER_COLUMN_HINT = 'This database is missing the photo-order column, so photos cannot be reordered yet. '
+  + 'Run supabase/migrations/20240101000004_add_display_order.sql in the Supabase SQL editor, then reload this page.';
+
+/* js/gallery.js owns the detection (PostgREST codes 42703 / PGRST204); this
+   fallback keeps the panel correct even if a browser still holds a cached
+   copy of the older gallery.js. */
+function isMissingOrderColumnError(error) {
+  if (window.GalleryData && typeof window.GalleryData.isMissingOrderColumn === 'function') {
+    return window.GalleryData.isMissingOrderColumn(error);
+  }
+  const code = (error && error.code) || '';
+  if (code === '42703' || code === 'PGRST204') return true;
+  const msg = (error && error.message) ? error.message : String(error || '');
+  return /display_order/.test(msg) && /(does not exist|schema cache)/i.test(msg);
+}
+
 function orderSaveHint(error) {
   const msg = (error && error.message) ? error.message : String(error || '');
-  if (/display_order/.test(msg) && /does not exist/i.test(msg)) {
-    return 'This database is missing the photo-order column. Run '
-      + 'supabase/migrations/20240101000004_add_display_order.sql in the Supabase SQL editor, then try again.';
-  }
+  if (isMissingOrderColumnError(error)) return MISSING_ORDER_COLUMN_HINT;
   return msg;
 }
 
@@ -332,6 +345,13 @@ async function saveOrderUpdates(updates) {
     return 'Supabase is not configured.';
   }
   const client = window.getSupabaseClient();
+
+  // Every reorder writes display_order, so on a database without that column
+  // each row would fail with the same error. Check once and explain instead.
+  if (typeof GalleryData.hasOrderColumn === 'function' && !(await GalleryData.hasOrderColumn())) {
+    return MISSING_ORDER_COLUMN_HINT;
+  }
+
   let firstError = null;
   for (const u of updates) {
     const { error } = await client
@@ -576,7 +596,11 @@ async function handleUpload(files) {
     added++;
   }
 
-  status.textContent = added + " photo(s) uploaded successfully!";
+  const orderReady = (typeof GalleryData.hasOrderColumn === 'function')
+    ? await GalleryData.hasOrderColumn()
+    : true;
+  status.textContent = added + " photo(s) uploaded successfully!"
+    + (orderReady ? '' : " This database has no photo-order column yet, so they follow the upload date — run supabase/migrations/20240101000004_add_display_order.sql to control the order manually.");
   status.style.color = "var(--success)";
 
   renderList($("#admin-search") ? $("#admin-search").value : '');

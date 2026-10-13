@@ -97,6 +97,11 @@ has a numeric `display_order` (migration `20240101000004_add_display_order.sql`)
 and the gallery pages read that column, then fall back to newest-first for rows
 still on the default `0`.
 
+The column is optional: the site probes for it once per page load, so a database
+that has not run migration 004 still shows every photo (newest-first) and still
+accepts uploads. Until the migration is applied, the reorder controls explain
+which file to run instead of saving.
+
 From `/admin.html` the admin can:
 
 - **drag a card** onto another to drop it at that position,
