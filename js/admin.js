@@ -133,8 +133,6 @@ async function renderList(searchQuery) {
       '<div class="admin-item-actions">' +
       '<button class="edit" title="Edit">✎</button>' +
       '<button class="del" title="Delete">✕</button>' +
-      '<button class="move" title="Move up" data-dir="up">▲</button>' +
-      '<button class="move" title="Move down" data-dir="down">▼</button>' +
       '</div>';
     
     // Edit button
@@ -143,10 +141,7 @@ async function renderList(searchQuery) {
     // The #number badge opens the "set an exact position" dialog.
     el.querySelector(".admin-item-rank").addEventListener("click", () => openOrderEditor(item));
 
-    // Move up / move down (one step at a time, with live save)
-    el.querySelector(".move[data-dir='up']").addEventListener("click", () => moveItem(item, -1));
-    el.querySelector(".move[data-dir='down']").addEventListener("click", () => moveItem(item, 1));
-    
+
     // Delete button with confirmation
     el.querySelector(".del").addEventListener("click", async () => {
       const confirmed = confirm('Remove "' + item.label + '" from the website?\n\nIt disappears from the gallery right away. This cannot be undone.');
@@ -177,66 +172,261 @@ async function renderList(searchQuery) {
     list.appendChild(el);
   });
 
-  // Make the whole card draggable so the admin can reorder with drag and drop.
-  // Dropping one card moves it to the position of the card it was dropped on
-  // — easier to understand than a free-form shuffle and works without a library.
-  let dragSrc = null;
-  $$("#admin-list .admin-item").forEach((card) => {
+  /* ---------- drag to arrange (desktop-icon style) ----------
+
+     Dragging a card opens an empty slot that follows the pointer: hover the
+     left half of a card to open a space before it, the right half to open a
+     space after it, and the other cards shift around that space exactly like
+     icons moved on a desktop. Letting go drops the card into the slot and
+     saves the sequence. Everything works from ids, so it still makes sense
+     while a search filter is on. */
+  let dragCard = null;
+  let dropSlot = null;
+
+  const cards = () => $$("#admin-list .admin-item:not(.drop-slot)");
+
+  function openSlot(card, after) {
+    if (!dropSlot) {
+      dropSlot = document.createElement("div");
+      dropSlot.className = "admin-item drop-slot";
+      dropSlot.setAttribute("aria-hidden", "true");
+      dropSlot.innerHTML = '<span class="drop-slot-label">Drop here</span>';
+      // Match the card being dragged so the space that opens up is exactly
+      // the size of the photo that will fill it.
+      const h = (dragCard && dragCard.getBoundingClientRect) ? dragCard.getBoundingClientRect().height : 0;
+      if (h > 0) dropSlot.style.minHeight = Math.round(h) + "px";
+    }
+    card.insertAdjacentElement(after ? "afterend" : "beforebegin", dropSlot);
+  }
+
+  /* Finish a drag: the card takes the slot's place, and the resulting order
+     is returned (or null when the card was not moved anywhere). */
+  function closeDrag() {
+    const card = dragCard;
+    const slot = dropSlot;
+    dragCard = null;
+    dropSlot = null;
+    cards().forEach((c) => c.classList.remove("dragging", "drag-over"));
+    if (!card || !slot || !slot.parentNode) return null;
+    slot.parentNode.insertBefore(card, slot);
+    slot.remove();
+    return orderFromIds(card.dataset.id, cards().map((el) => el.dataset.id));
+  }
+
+  cards().forEach((card) => {
     card.addEventListener("dragstart", (e) => {
-      dragSrc = card;
+      dragCard = card;
+      card.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", card.dataset.id);
-      requestAnimationFrame(() => card.classList.add("dragging"));
     });
-    card.addEventListener("dragend", () => {
-      $$("#admin-list .admin-item.dragging").forEach((c) => c.classList.remove("dragging"));
-      $$("#admin-list .admin-item.drag-over").forEach((c) => c.classList.remove("drag-over"));
-      dragSrc = null;
-    });
+
     card.addEventListener("dragover", (e) => {
-      if (!dragSrc || dragSrc === card) return;
+      if (!dragCard || dragCard === card) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      card.classList.add("drag-over");
+      const rect = card.getBoundingClientRect();
+      const after = (e.clientX - rect.left) > rect.width / 2;
+      openSlot(card, after);
+      cards().forEach((c) => c.classList.toggle("drag-over", c === card));
     });
+
     card.addEventListener("dragleave", () => card.classList.remove("drag-over"));
-    card.addEventListener("drop", async (e) => {
-      e.preventDefault();
-      card.classList.remove("drag-over");
-      if (!dragSrc || dragSrc === card) return;
-      await moveItemToCard(dragSrc.dataset.id, card.dataset.id);
+
+    // dragend always fires — after a drop and when a drag is cancelled — so
+    // the save happens here, in one place, whatever the browser does.
+    card.addEventListener("dragend", async () => {
+      const moved = closeDrag();
+      if (!moved) return;
+      await applyOrder(moved, moved.findIndex((x) => x.id === card.dataset.id) + 1);
     });
   });
 }
 
-/* ---------- move helpers (admin list) ----------
+/* Turn the order the cards are in on screen into the order to save. The list
+   can be filtered by the search box, so the dragged card's new neighbours —
+   not raw screen positions — are mapped back onto the full sequence: it lands
+   directly above the photo it now sits in front of, and keeps that relative
+   place in every filtered view. */
+function orderFromIds(draggedId, visibleIds) {
+  const item = allItems.find((x) => x.id === draggedId);
+  if (!item) return null;
+
+  const i = visibleIds.indexOf(draggedId);
+  const beforeId = i >= 0 ? visibleIds[i + 1] || null : null;  // the card now below it
+  const afterId  = i > 0 ? visibleIds[i - 1] : null;           // the card now above it
+
+  const rest = allItems.filter((x) => x.id !== draggedId);
+  let at = rest.length;
+
+  if (beforeId) {
+    const k = rest.findIndex((x) => x.id === beforeId);
+    if (k >= 0) at = k;
+  } else if (afterId) {
+    const k = rest.findIndex((x) => x.id === afterId);
+    if (k >= 0) at = k + 1;
+  }
+
+  const next = [...rest];
+  next.splice(at, 0, item);
+  return next;
+}
+
+/* ---------- saving a new order ----------
 
    The order the admin sees is ONE flat sequence for the whole gallery. Each
    category page on the website filters that same sequence, so a photo keeps
-   its position relative to the other photos in its category. Reordering
-   therefore splices the flat list and renumbers every position 1..N, which
-   keeps the numbers dense and stops them drifting after many small moves. */
+   its position relative to the other photos in its category.
 
-/* Save the position numbers for the whole list. Only rows whose number
-   actually changed are sent, so a one-step nudge costs one or two updates. */
+   Two ways to store that sequence, picked automatically:
+
+   1. `display_order` — the dedicated column from migration 004. Only the rows
+      whose number changed are written.
+   2. `created_at` — the fallback used while that migration has not been
+      applied. The gallery sorts by this column, so the position is encoded
+      into it: position 1 carries the NEWEST timestamp. Moving one photo then
+      writes ONE row (a time between its two new neighbours) instead of
+      renumbering the list, and the whole list is only rewritten when a gap is
+      too small to split or the list is re-sorted wholesale.
+
+   Applying migration 004 switches everything to method 1; the timestamps stay
+   behind as the tie-breaker for rows that still carry display_order = 0. */
+const ORDER_GAP_MS = 1000;   // spacing used when the list is rewritten
+const MIN_GAP_MS   = 2000;   // smallest gap a single move may try to split
+
+const UPDATE_REFUSED_HINT = 'The database refused the change — no row was updated. '
+  + 'Check that the account you are signed in with is listed in the admin allowlist (public.admins).';
+
+/* One short note after the first save through created_at, so the mechanism is
+   never a surprise: shown once, then cleared. */
+let orderStorageNote = '';
+
+const asMs = (item) => (item.created_at ? new Date(item.created_at).getTime() : NaN);
+
 async function persistOrder(list) {
-  const updates = [];
-  list.forEach((item, idx) => {
-    const next = idx + 1;
-    if ((Number(item.order) || 0) !== next) {
-      updates.push({ id: item.id, order: next });
+  if (!list.length) return { saved: 0, error: null };
+
+  const usesColumn = (typeof GalleryData.hasOrderColumn === 'function')
+    ? await GalleryData.hasOrderColumn()
+    : true;
+
+  if (usesColumn) {
+    const updates = [];
+    list.forEach((item, idx) => {
+      const next = idx + 1;
+      if ((Number(item.order) || 0) !== next) {
+        updates.push({ id: item.id, order: next });
+      }
+    });
+
+    if (!updates.length) return { saved: 0, error: null };
+
+    const error = await saveOrderUpdates(updates);
+    if (error) return { saved: 0, error };
+
+    // Keep the in-memory copy in step so the next move starts from the
+    // sequence the admin is actually looking at.
+    list.forEach((item, idx) => { item.order = idx + 1; });
+    return { saved: updates.length, error: null };
+  }
+
+  const result = await persistDateOrder(list);
+  if (!result.error && result.saved) {
+    orderStorageNote = ' The order is kept in the photos\' upload-date field until migration'
+      + ' 20240101000004_add_display_order.sql is applied.';
+  }
+  return result;
+}
+
+/* The one photo that changed place, when exactly one did — the drag case.
+   { same: true } when nothing moved, { item, index } for a single move, or
+   null when the list was reshuffled wholesale (a re-sort, or a photo dropped
+   far away). */
+function soleMovedItem(desired, current) {
+  if (desired.length === current.length && desired.every((item, i) => item.id === current[i].id)) {
+    return { same: true };
+  }
+
+  for (let i = 0; i < desired.length; i++) {
+    const id = desired[i].id;
+    const rest = desired.filter((x) => x.id !== id).map((x) => x.id).join(',');
+    const now  = current.filter((x) => x.id !== id).map((x) => x.id).join(',');
+    if (rest === now) return { item: desired[i], index: i };
+  }
+  return null;
+}
+
+/* Write timestamps in small parallel batches. PostgREST does not report an
+   UPDATE that matched no row as an error — it answers with an empty list —
+   so ask for the updated row back and treat an empty answer as a refusal. */
+async function writeTimestamps(client, rows) {
+  const table = window.SUPABASE_CONFIG.tableName;
+  let written = 0;
+
+  for (let i = 0; i < rows.length; i += 6) {
+    const batch = rows.slice(i, i + 6);
+    const results = await Promise.all(batch.map((row) =>
+      client.from(table)
+        .update({ created_at: new Date(row.at).toISOString() })
+        .eq('id', row.id)
+        .select('id')));
+
+    const refused = results.find((r) => r.error || !r.data || !r.data.length);
+    if (refused) {
+      return { written, error: refused.error ? refused.error.message : UPDATE_REFUSED_HINT };
     }
-  });
+    written += batch.length;
+  }
 
-  if (!updates.length) return { saved: 0, error: null };
+  return { written, error: null };
+}
 
-  const error = await saveOrderUpdates(updates);
+/* Renumber the whole sequence: position 1 gets the newest timestamp and every
+   photo below it one second older. Used when the order changes wholesale or
+   when a gap has become too small to split any further. */
+async function rewriteTimestamps(client, list) {
+  const base = Date.now();
+  const rows = list.map((item, idx) => ({ id: item.id, at: base - idx * ORDER_GAP_MS }));
+
+  const { written, error } = await writeTimestamps(client, rows);
   if (error) return { saved: 0, error };
 
-  // Keep the in-memory copy in step so the next move starts from the
-  // sequence the admin is actually looking at.
-  list.forEach((item, idx) => { item.order = idx + 1; });
-  return { saved: updates.length, error: null };
+  list.forEach((item, idx) => { item.created_at = new Date(rows[idx].at).toISOString(); });
+  return { saved: written, error: null };
+}
+
+/* Store the order in created_at — the path used while display_order does not
+   exist. One write per drag; see the block comment above. */
+async function persistDateOrder(list) {
+  if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+    return { saved: 0, error: 'Supabase is not configured.' };
+  }
+  const client = window.getSupabaseClient();
+
+  const current = [...list].sort((a, b) => asMs(b) - asMs(a));
+  const moved = list.some((i) => isNaN(asMs(i))) ? null : soleMovedItem(list, current);
+
+  if (moved && moved.same) return { saved: 0, error: null };
+  if (!moved) return rewriteTimestamps(client, list);
+
+  const { item, index } = moved;
+  const above = list[index - 1];                // the photo it now follows (newer)
+  const below = list[index + 1];                // the photo it now precedes (older)
+  const hi = above ? asMs(above) : null;
+  const lo = below ? asMs(below) : null;
+
+  let at;
+  if (hi == null && lo == null) return rewriteTimestamps(client, list);
+  if (hi == null) at = lo + ORDER_GAP_MS;       // dropped at the top
+  else if (lo == null) at = hi - ORDER_GAP_MS;  // dropped at the bottom
+  else if (hi - lo < MIN_GAP_MS) return rewriteTimestamps(client, list);
+  else at = Math.round((hi + lo) / 2);          // between its two new neighbours
+
+  const { written, error } = await writeTimestamps(client, [{ id: item.id, at }]);
+  if (error) return { saved: 0, error };
+
+  item.created_at = new Date(at).toISOString();
+  return { saved: written, error: null };
 }
 
 /* A missing display_order column means migration 004 has not been applied to
@@ -277,48 +467,14 @@ async function applyOrder(list, position) {
     }
   } else if (status) {
     status.textContent = saved
-      ? "Photo is now at position " + position + " on the website."
+      ? "Photo is now at position " + position + " on the website." + orderStorageNote
       : "That photo is already at position " + position + ".";
+    orderStorageNote = '';
     status.style.color = saved ? "var(--success)" : "var(--muted)";
     setTimeout(() => { status.textContent = ""; }, 3000);
   }
 
   renderList($("#admin-search") ? $("#admin-search").value : "");
-}
-
-/* Nudge one photo one place up or down the list. */
-async function moveItem(item, direction) {
-  const list = [...allItems];
-  const i = list.findIndex((x) => x.id === item.id);
-  if (i < 0) return;
-  const j = i + direction;
-  if (j < 0 || j >= list.length) {
-    const status = $("#upload-status");
-    if (status) {
-      status.textContent = direction < 0
-        ? "That photo is already first on the website."
-        : "That photo is already last on the website.";
-      status.style.color = "var(--muted)";
-      setTimeout(() => { status.textContent = ""; }, 3000);
-    }
-    return;
-  }
-  const [moved] = list.splice(i, 1);
-  list.splice(j, 0, moved);
-  await applyOrder(list, j + 1);
-}
-
-/* Drag and drop: move the dragged photo to the position of the card it was
-   dropped on. Works from ids, so it still makes sense while a search is on. */
-async function moveItemToCard(srcId, tgtId) {
-  if (!srcId || !tgtId || srcId === tgtId) return;
-  const list = [...allItems];
-  const srcIdx = list.findIndex((x) => x.id === srcId);
-  const tgtIdx = list.findIndex((x) => x.id === tgtId);
-  if (srcIdx < 0 || tgtIdx < 0) return;
-  const [moved] = list.splice(srcIdx, 1);
-  list.splice(tgtIdx, 0, moved);
-  await applyOrder(list, tgtIdx + 1);
 }
 
 /* Move a photo to an exact position (1 = first). Used by the #number badge. */
@@ -338,28 +494,27 @@ async function moveItemToPosition(id, requested) {
 }
 
 /* Bulk persist order changes: one small request per changed row. Returns the
-   first error message, or null when every row saved. */
+   first error message, or null when every row saved. `.select('id')` matters —
+   an UPDATE that matches no row is not an error for PostgREST, it just comes
+   back empty, which would look like a successful save. */
 async function saveOrderUpdates(updates) {
   if (!updates.length) return null;
   if (!window.getSupabaseClient || !window.getSupabaseClient()) {
     return 'Supabase is not configured.';
   }
   const client = window.getSupabaseClient();
-
-  // Every reorder writes display_order, so on a database without that column
-  // each row would fail with the same error. Check once and explain instead.
-  if (typeof GalleryData.hasOrderColumn === 'function' && !(await GalleryData.hasOrderColumn())) {
-    return MISSING_ORDER_COLUMN_HINT;
-  }
-
   let firstError = null;
+
   for (const u of updates) {
-    const { error } = await client
+    const { data, error } = await client
       .from(window.SUPABASE_CONFIG.tableName)
       .update({ display_order: u.order })
-      .eq('id', u.id);
+      .eq('id', u.id)
+      .select('id');
     if (error && !firstError) firstError = error.message;
+    else if (!firstError && (!data || !data.length)) firstError = UPDATE_REFUSED_HINT;
   }
+
   return firstError;
 }
 
@@ -600,7 +755,7 @@ async function handleUpload(files) {
     ? await GalleryData.hasOrderColumn()
     : true;
   status.textContent = added + " photo(s) uploaded successfully!"
-    + (orderReady ? '' : " This database has no photo-order column yet, so they follow the upload date — run supabase/migrations/20240101000004_add_display_order.sql to control the order manually.");
+    + (orderReady ? " Drag the new card into place to decide where it appears." : " It is at the top of the list — drag it into place to decide where it appears.");
   status.style.color = "var(--success)";
 
   renderList($("#admin-search") ? $("#admin-search").value : '');

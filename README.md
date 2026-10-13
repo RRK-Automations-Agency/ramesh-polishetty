@@ -97,20 +97,29 @@ has a numeric `display_order` (migration `20240101000004_add_display_order.sql`)
 and the gallery pages read that column, then fall back to newest-first for rows
 still on the default `0`.
 
-The column is optional: the site probes for it once per page load, so a database
-that has not run migration 004 still shows every photo (newest-first) and still
-accepts uploads. Until the migration is applied, the reorder controls explain
-which file to run instead of saving.
+The column is optional. The site probes for it once per page load, and the order
+is stored in whichever column the database actually has:
+
+1. **`display_order`** (migration 004) — the dedicated column. The list is
+   renumbered 1…N and only the rows whose number changed are written.
+2. **`created_at`** — the fallback while migration 004 is not applied. The gallery
+   already sorts by this column, so the position is encoded into it: position 1
+   carries the newest timestamp, and moving one photo writes **one** row (a time
+   between its two new neighbours). The whole list is only rewritten when a gap
+   becomes too small to split or the list is re-sorted wholesale.
+
+So arranging works today and keeps working after the migration: the timestamps
+then sit behind `display_order` as the tie-breaker for rows still on `0`.
 
 From `/admin.html` the admin can:
 
-- **drag a card** onto another to drop it at that position,
-- tap **▲ ▼** on a card to nudge it one place,
+- **drag a card** into place — an empty slot follows the pointer and the other
+  cards shift around it, like arranging icons on a desktop,
 - tap the **#number** badge to type an exact position,
 - or use **Newest first / Oldest first** to reset the whole list.
 
-The list is renumbered 1…N after every change, so the numbers never drift, and
-the chosen order is what the matching gallery page shows.
+The chosen order is what the matching gallery page shows. Every drag re-reads
+the position from the database, so the panel and the website never disagree.
 
 ## 🛡️ Security
 

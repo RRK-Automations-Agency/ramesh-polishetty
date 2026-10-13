@@ -684,9 +684,10 @@ select option{ background:var(--bg-2); color:var(--text); }
 .admin-item{
   background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; position:relative;
   transition:border-color .2s, transform .2s, box-shadow .2s;
+  cursor:grab;
 }
 .admin-item:hover{ border-color:var(--accent-light); transform:translateY(-2px); }
-.admin-item.dragging{ opacity:.45; box-shadow:0 0 0 2px var(--accent-light); }
+.admin-item.dragging{ opacity:.45; box-shadow:0 0 0 2px var(--accent-light); cursor:grabbing; }
 .admin-item.drag-over{ border-color:var(--accent); transform:scale(1.02); }
 /* The rank badge is a button: tapping it opens the "set an exact
    position" dialog, so it needs button resets plus a hover cue. */
@@ -729,15 +730,17 @@ select option{ background:var(--bg-2); color:var(--text); }
 }
 .admin-item .del:hover{ background:var(--danger); transform:scale(1.1); }
 
-/* Move buttons sit alongside edit/delete; kept compact so four controls
-   still fit across the top of a card on a phone. */
-.admin-item .move{
-  width:30px; height:30px; border-radius:9px;
-  font-size:12px; transition:.2s; background:rgba(255,255,255,.08);
-  border:1px solid var(--line-2); color:var(--text); cursor:pointer;
-  display:grid; place-items:center; line-height:1;
+/* The empty cell that follows the pointer while a card is being dragged. The
+   other cards shift around it, so the drop lands where it looks like it will
+   — the same idea as arranging icons on a desktop. */
+.admin-item.drop-slot{
+  border:2px dashed var(--accent-light); background:rgba(30,58,138,.12);
+  cursor:grabbing; min-height:120px;
 }
-.admin-item .move:hover{ background:var(--accent-soft); border-color:var(--accent-light); color:#fff; }
+.admin-item.drop-slot .drop-slot-label{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-size:12px; letter-spacing:.04em; color:var(--accent-light);
+}
 .admin-item.dragging .admin-item-rank, .admin-item.dragging .admin-item-actions{ opacity:.6; }
 
 /* Reorder shortcut row under the photo list */
