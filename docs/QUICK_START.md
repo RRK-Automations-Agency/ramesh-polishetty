@@ -74,7 +74,9 @@ This creates the `photos` table with proper security rules.
 5. **Email Confirm**: Auto-confirm ✅
 6. Click **Create User**
 7. Run the migrations in `supabase/migrations/` in filename order in the **SQL
-   Editor**, ending with `20240101000003_secure_rls_admin_only.sql`.
+   Editor**, ending with `20240101000004_add_display_order.sql`. (That last one
+   adds the column that stores the photo order you set in the admin panel; the
+   gallery falls back to newest-first until it is applied.)
 8. In that last migration, put your admin email where it says
    `admin@example.com` and run section 5. This adds you to the `admins`
    allowlist — the only accounts allowed to upload, edit or delete photos.

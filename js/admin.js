@@ -117,7 +117,14 @@ async function renderList(searchQuery) {
   items.forEach((item) => {
     const el = document.createElement("div");
     el.className = "admin-item";
+    el.draggable = "true";
+    el.dataset.id = item.id;
+    el.dataset.order = String(item.order ?? 0);
+    // Show the position in the full list, not in the search results, so the
+    // number always matches where the photo sits on the website.
+    const rank = allItems.findIndex((x) => x.id === item.id) + 1;
     el.innerHTML =
+      '<button class="admin-item-rank" type="button" title="Set an exact position on the website">#' + rank + '</button>' +
       (item.src
         ? '<img src="' + escapeHTML(item.src) + '" alt="' + escapeHTML(item.label) + '" loading="lazy"/>'
         : '<div class="a-ph">📸</div>') +
@@ -126,10 +133,19 @@ async function renderList(searchQuery) {
       '<div class="admin-item-actions">' +
       '<button class="edit" title="Edit">✎</button>' +
       '<button class="del" title="Delete">✕</button>' +
+      '<button class="move" title="Move up" data-dir="up">▲</button>' +
+      '<button class="move" title="Move down" data-dir="down">▼</button>' +
       '</div>';
     
     // Edit button
     el.querySelector(".edit").addEventListener("click", () => openEditModal(item));
+
+    // The #number badge opens the "set an exact position" dialog.
+    el.querySelector(".admin-item-rank").addEventListener("click", () => openOrderEditor(item));
+
+    // Move up / move down (one step at a time, with live save)
+    el.querySelector(".move[data-dir='up']").addEventListener("click", () => moveItem(item, -1));
+    el.querySelector(".move[data-dir='down']").addEventListener("click", () => moveItem(item, 1));
     
     // Delete button with confirmation
     el.querySelector(".del").addEventListener("click", async () => {
@@ -160,6 +176,159 @@ async function renderList(searchQuery) {
     
     list.appendChild(el);
   });
+
+  // Make the whole card draggable so the admin can reorder with drag and drop.
+  // Dropping one card moves it to the position of the card it was dropped on
+  // — easier to understand than a free-form shuffle and works without a library.
+  let dragSrc = null;
+  $$("#admin-list .admin-item").forEach((card) => {
+    card.addEventListener("dragstart", (e) => {
+      dragSrc = card;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", card.dataset.id);
+      requestAnimationFrame(() => card.classList.add("dragging"));
+    });
+    card.addEventListener("dragend", () => {
+      $$("#admin-list .admin-item.dragging").forEach((c) => c.classList.remove("dragging"));
+      $$("#admin-list .admin-item.drag-over").forEach((c) => c.classList.remove("drag-over"));
+      dragSrc = null;
+    });
+    card.addEventListener("dragover", (e) => {
+      if (!dragSrc || dragSrc === card) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      card.classList.add("drag-over");
+    });
+    card.addEventListener("dragleave", () => card.classList.remove("drag-over"));
+    card.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      card.classList.remove("drag-over");
+      if (!dragSrc || dragSrc === card) return;
+      await moveItemToCard(dragSrc.dataset.id, card.dataset.id);
+    });
+  });
+}
+
+/* ---------- move helpers (admin list) ----------
+
+   The order the admin sees is ONE flat sequence for the whole gallery. Each
+   category page on the website filters that same sequence, so a photo keeps
+   its position relative to the other photos in its category. Reordering
+   therefore splices the flat list and renumbers every position 1..N, which
+   keeps the numbers dense and stops them drifting after many small moves. */
+
+/* Save the position numbers for the whole list. Only rows whose number
+   actually changed are sent, so a one-step nudge costs one or two updates. */
+async function persistOrder(list) {
+  const updates = [];
+  list.forEach((item, idx) => {
+    const next = idx + 1;
+    if ((Number(item.order) || 0) !== next) {
+      updates.push({ id: item.id, order: next });
+    }
+  });
+
+  if (!updates.length) return { saved: 0, error: null };
+
+  const error = await saveOrderUpdates(updates);
+  if (error) return { saved: 0, error };
+
+  // Keep the in-memory copy in step so the next move starts from the
+  // sequence the admin is actually looking at.
+  list.forEach((item, idx) => { item.order = idx + 1; });
+  return { saved: updates.length, error: null };
+}
+
+/* Shared save + re-render + status line for every reorder action. */
+async function applyOrder(list, position) {
+  allItems = list;
+  const status = $("#upload-status");
+  const { saved, error } = await persistOrder(list);
+
+  if (error) {
+    if (status) {
+      status.textContent = "Could not save the new order: " + error;
+      status.style.color = "var(--danger)";
+    }
+  } else if (status) {
+    status.textContent = saved
+      ? "Photo is now at position " + position + " on the website."
+      : "That photo is already at position " + position + ".";
+    status.style.color = saved ? "var(--success)" : "var(--muted)";
+    setTimeout(() => { status.textContent = ""; }, 3000);
+  }
+
+  renderList($("#admin-search") ? $("#admin-search").value : "");
+}
+
+/* Nudge one photo one place up or down the list. */
+async function moveItem(item, direction) {
+  const list = [...allItems];
+  const i = list.findIndex((x) => x.id === item.id);
+  if (i < 0) return;
+  const j = i + direction;
+  if (j < 0 || j >= list.length) {
+    const status = $("#upload-status");
+    if (status) {
+      status.textContent = direction < 0
+        ? "That photo is already first on the website."
+        : "That photo is already last on the website.";
+      status.style.color = "var(--muted)";
+      setTimeout(() => { status.textContent = ""; }, 3000);
+    }
+    return;
+  }
+  const [moved] = list.splice(i, 1);
+  list.splice(j, 0, moved);
+  await applyOrder(list, j + 1);
+}
+
+/* Drag and drop: move the dragged photo to the position of the card it was
+   dropped on. Works from ids, so it still makes sense while a search is on. */
+async function moveItemToCard(srcId, tgtId) {
+  if (!srcId || !tgtId || srcId === tgtId) return;
+  const list = [...allItems];
+  const srcIdx = list.findIndex((x) => x.id === srcId);
+  const tgtIdx = list.findIndex((x) => x.id === tgtId);
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  const [moved] = list.splice(srcIdx, 1);
+  list.splice(tgtIdx, 0, moved);
+  await applyOrder(list, tgtIdx + 1);
+}
+
+/* Move a photo to an exact position (1 = first). Used by the #number badge. */
+async function moveItemToPosition(id, requested) {
+  const list = [...allItems];
+  const from = list.findIndex((x) => x.id === id);
+  if (from < 0) return { error: "That photo is no longer in the list. Reload the page." };
+
+  const to = Math.min(Math.max(requested, 1), list.length) - 1;
+  const [moved] = list.splice(from, 1);
+  list.splice(to, 0, moved);
+
+  allItems = list;
+  const { error } = await persistOrder(list);
+  if (error) return { error };
+  return { position: to + 1 };
+}
+
+/* Bulk persist order changes: one small request per changed row. Returns the
+   first error message, or null when every row saved. */
+async function saveOrderUpdates(updates) {
+  if (!updates.length) return null;
+  if (!window.getSupabaseClient || !window.getSupabaseClient()) {
+    return 'Supabase is not configured.';
+  }
+  const client = window.getSupabaseClient();
+  let firstError = null;
+  for (const u of updates) {
+    const { error } = await client
+      .from(window.SUPABASE_CONFIG.tableName)
+      .update({ display_order: u.order })
+      .eq('id', u.id);
+    if (error && !firstError) firstError = error.message;
+  }
+  return firstError;
 }
 
 /* ---------- edit modal ---------- */
@@ -172,6 +341,11 @@ function openEditModal(item) {
   $('#edit-label').value = item.label || '';
   $('#edit-cat').value = item.cat || 'transformations';
   $('#edit-note').value = item.note || '';
+  const orderField = $('#edit-order');
+  if (orderField) {
+    const pos = allItems.findIndex((x) => x.id === item.id) + 1;
+    orderField.value = String(pos > 0 ? pos : (Number(item.order) || 1));
+  }
   $('#edit-status').textContent = '';
   
   modal.style.display = 'flex';
@@ -188,9 +362,14 @@ async function handleEditSave(e) {
   const id = $('#edit-id').value;
   const label = $('#edit-label').value.trim();
   const cat = $('#edit-cat').value;
-  const note = $('#edit-note').value.trim();
+  const note  = $('#edit-note').value.trim();
+  // The position field is optional: an empty box means "leave it where it is".
+  const orderField = $('#edit-order');
+  const order = (orderField && orderField.value.trim() !== '')
+    ? Math.max(1, parseInt(orderField.value, 10) || 1)
+    : null;
   const status = $('#edit-status');
-  
+
   if (!label) {
     status.textContent = 'Label is required.';
     status.style.color = 'var(--danger)';
@@ -208,18 +387,37 @@ async function handleEditSave(e) {
   
   try {
     const client = window.getSupabaseClient();
+    const updates = { label, category: cat, note };
     const { error } = await client
       .from(window.SUPABASE_CONFIG.tableName)
-      .update({ label, category: cat, note })
+      .update(updates)
       .eq('id', id);
-    
+
     if (error) {
       status.textContent = 'Update failed: ' + error.message;
       status.style.color = 'var(--danger)';
       return;
     }
-    
-    status.textContent = 'Saved successfully!';
+
+    // A changed position is applied as a real move, so the list is renumbered
+    // and no gaps or duplicate numbers are left behind.
+    let movedTo = null;
+    if (order != null) {
+      const currentIdx = allItems.findIndex((x) => x.id === id);
+      if (currentIdx >= 0 && currentIdx !== order - 1) {
+        const move = await moveItemToPosition(id, order);
+        if (move.error) {
+          status.textContent = 'Details saved, but the new position could not be saved: ' + move.error;
+          status.style.color = 'var(--danger)';
+          return;
+        }
+        movedTo = move.position;
+      }
+    }
+
+    status.textContent = movedTo
+      ? 'Saved — this photo is now at position ' + movedTo + '.'
+      : 'Saved successfully!';
     status.style.color = 'var(--success)';
     
     setTimeout(() => {
@@ -233,6 +431,85 @@ async function handleEditSave(e) {
   } finally {
     if (saveBtn) { saveBtn.textContent = 'Save Changes'; saveBtn.disabled = false; }
   }
+}
+
+/* ---------- position dialog (admin list) ---------- */
+
+/* The #number badge on a card opens this: type a position, press Reorder and
+   the photo jumps there. Numbers are 1-based, matching what the admin sees. */
+function openOrderEditor(item) {
+  const modal = $('#order-modal');
+  if (!modal) return;
+
+  const pos = allItems.findIndex((x) => x.id === item.id) + 1;
+  const shown = pos > 0 ? pos : (Number(item.order) || 1);
+
+  $('#order-id').value = item.id;
+  $('#order-current').textContent = String(shown);
+  $('#order-input').value = String(shown);
+  $('#order-input').max = String(allItems.length || 1);
+  // Note: #order-label is its own element. Writing text into a parent that
+  // *contains* the position element would delete it from the DOM.
+  $('#order-label').textContent = '"' + item.label + '"';
+  $('#order-cat').textContent = item.cat;
+  $('#order-status').textContent = '';
+  modal.style.display = 'flex';
+
+  const input = $('#order-input');
+  if (input) { input.focus(); input.select(); }
+}
+
+function closeOrderEditor() {
+  const modal = $('#order-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleOrderSave(e) {
+  e.preventDefault();
+  const id = $('#order-id').value;
+  const raw = $('#order-input').value.trim();
+  const requested = parseInt(raw, 10);
+  const statusEl = $('#order-status');
+
+  if (!id || !raw || isNaN(requested) || requested < 1) {
+    statusEl.textContent = 'Please enter a whole number starting at 1.';
+    statusEl.style.color = 'var(--danger)';
+    return;
+  }
+
+  const saveBtn = $('#order-save');
+  if (saveBtn) { saveBtn.textContent = 'Saving…'; saveBtn.disabled = true; }
+
+  try {
+    const result = await moveItemToPosition(id, requested);
+    if (result.error) {
+      statusEl.textContent = 'Could not save: ' + result.error;
+      statusEl.style.color = 'var(--danger)';
+      return;
+    }
+
+    statusEl.textContent = 'Now at position ' + result.position + '.';
+    statusEl.style.color = 'var(--success)';
+    setTimeout(() => {
+      closeOrderEditor();
+      renderList($("#admin-search") ? $("#admin-search").value : '');
+    }, 700);
+  } catch (err) {
+    statusEl.textContent = 'An error occurred. Please try again.';
+    statusEl.style.color = 'var(--danger)';
+  } finally {
+    if (saveBtn) { saveBtn.textContent = 'Reorder'; saveBtn.disabled = false; }
+  }
+}
+
+/* ---------- helpers ---------- */
+
+/* Where a freshly uploaded photo lands: right after every photo that is
+   already on the website, so nothing jumps ahead of the existing order.
+   The admin can drag it anywhere afterwards. */
+function nextPosition() {
+  const max = allItems.reduce((acc, i) => Math.max(acc, Number(i.order) || 0), 0);
+  return max + 1;
 }
 
 /* ---------- upload (Supabase only) ---------- */
@@ -271,11 +548,15 @@ async function handleUpload(files) {
   status.textContent = "Uploading " + files.length + " photo(s) to Supabase…";
   status.style.color = "var(--muted)";
 
+  // Make sure the list is loaded before working out where the new photos go.
+  if (!allItems.length) allItems = await GalleryData.load();
+  let nextPos = nextPosition();
+
   let added = 0;
   for (const file of files) {
     status.textContent = `Uploading ${added + 1} of ${files.length}…`;
-    const result = await GalleryData.uploadToSupabase(file, { cat, label, note });
-    if (result.error) {
+    const result = await GalleryData.uploadToSupabase(file, { cat, label, note, order: nextPos++ });
+      if (result.error) {
       status.textContent = `Upload failed: ${result.error}`;
       status.style.color = "var(--danger)";
       return;
@@ -289,6 +570,38 @@ async function handleUpload(files) {
   renderList($("#admin-search") ? $("#admin-search").value : '');
   updateDashboardStats();
   $("#a-label").value = ""; $("#a-note").value = ""; $("#a-files").value = "";
+}
+
+/* ---------- reorder shortcuts ---------- */
+
+/* Put the whole list back into a date sequence: direction 1 = newest first,
+   -1 = oldest first. Handy once the manual order has been shuffled a lot. */
+async function resetOrderByDate(direction) {
+  if (!allItems.length) return;
+
+  const list = [...allItems].sort((a, b) => {
+    const ta = String(a.created_at || '');
+    const tb = String(b.created_at || '');
+    return direction === 1 ? tb.localeCompare(ta) : ta.localeCompare(tb);
+  });
+
+  allItems = list;
+  const status = $("#upload-status");
+  const { error } = await persistOrder(list);
+
+  if (status) {
+    if (error) {
+      status.textContent = "Could not save the new order: " + error;
+      status.style.color = "var(--danger)";
+    } else {
+      status.textContent = "All " + list.length + " photos are now in " +
+        (direction === 1 ? 'newest' : 'oldest') + " first order.";
+      status.style.color = "var(--success)";
+      setTimeout(() => { status.textContent = ""; }, 3000);
+    }
+  }
+
+  renderList($("#admin-search") ? $("#admin-search").value : "");
 }
 
 /* ---------- views ---------- */
@@ -491,6 +804,29 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Close modal on Escape
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeEditModal();
+    if (e.key === "Escape") {
+      closeEditModal();
+      closeOrderEditor();
+    }
   });
+  
+  // Position dialog
+  const orderForm = $('#order-form');
+  if (orderForm) orderForm.addEventListener('submit', handleOrderSave);
+  const orderClose = $('#order-close');
+  if (orderClose) orderClose.addEventListener('click', closeOrderEditor);
+  const orderCancel = $('#order-cancel');
+  if (orderCancel) orderCancel.addEventListener('click', closeOrderEditor);
+  const orderModal = $('#order-modal');
+  if (orderModal) {
+    orderModal.addEventListener('click', (e) => {
+      if (e.target === orderModal) closeOrderEditor();
+    });
+  }
+
+  // Reset the whole list back to a date order
+  const newestBtn = $('#order-newest');
+  if (newestBtn) newestBtn.addEventListener('click', () => resetOrderByDate(1));
+  const oldestBtn = $('#order-oldest');
+  if (oldestBtn) oldestBtn.addEventListener('click', () => resetOrderByDate(-1));
 });

@@ -680,12 +680,27 @@ select option{ background:var(--bg-2); color:var(--text); }
   font-family:var(--font-head); font-weight:600; font-size:18px; margin-bottom:14px;
 }
 .admin-list-heading span{ color:var(--accent-light); }
-.admin-list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:16px; }
+.admin-list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:16px; }
 .admin-item{
   background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; position:relative;
-  transition:border-color .2s, transform .2s;
+  transition:border-color .2s, transform .2s, box-shadow .2s;
 }
 .admin-item:hover{ border-color:var(--accent-light); transform:translateY(-2px); }
+.admin-item.dragging{ opacity:.45; box-shadow:0 0 0 2px var(--accent-light); }
+.admin-item.drag-over{ border-color:var(--accent); transform:scale(1.02); }
+/* The rank badge is a button: tapping it opens the "set an exact
+   position" dialog, so it needs button resets plus a hover cue. */
+.admin-item .admin-item-rank{
+  position:absolute; top:8px; left:8px;
+  font-family:inherit; line-height:1.4; cursor:pointer;
+  font-size:11px; font-weight:700; color:var(--muted);
+  background:rgba(10,10,15,.55); padding:2px 6px; border-radius:6px;
+  backdrop-filter:blur(4px); border:1px solid var(--line);
+  transition:color .2s, border-color .2s, background .2s;
+}
+.admin-item .admin-item-rank:hover, .admin-item .admin-item-rank:focus-visible{
+  color:#fff; border-color:var(--accent-light); background:rgba(30,58,138,.75);
+}
 .admin-item img{ width:100%; aspect-ratio:1; object-fit:cover; }
 .admin-item .a-ph{
   width:100%; aspect-ratio:1; display:grid; place-items:center;
@@ -700,8 +715,8 @@ select option{ background:var(--bg-2); color:var(--text); }
   position:absolute; top:8px; right:8px; display:flex; gap:6px;
 }
 .admin-item .edit, .admin-item .del{
-  width:38px; height:38px; border-radius:10px;
-  color:#fff; border:none; font-size:16px; transition:.2s; cursor:pointer;
+  width:30px; height:30px; border-radius:9px;
+  color:#fff; border:none; font-size:14px; transition:.2s; cursor:pointer;
   display:grid; place-items:center; backdrop-filter:blur(4px);
   box-shadow:0 2px 10px rgba(0,0,0,.45);
 }
@@ -713,6 +728,36 @@ select option{ background:var(--bg-2); color:var(--text); }
   background:rgba(220,38,38,.85);
 }
 .admin-item .del:hover{ background:var(--danger); transform:scale(1.1); }
+
+/* Move buttons sit alongside edit/delete; kept compact so four controls
+   still fit across the top of a card on a phone. */
+.admin-item .move{
+  width:30px; height:30px; border-radius:9px;
+  font-size:12px; transition:.2s; background:rgba(255,255,255,.08);
+  border:1px solid var(--line-2); color:var(--text); cursor:pointer;
+  display:grid; place-items:center; line-height:1;
+}
+.admin-item .move:hover{ background:var(--accent-soft); border-color:var(--accent-light); color:#fff; }
+.admin-item.dragging .admin-item-rank, .admin-item.dragging .admin-item-actions{ opacity:.6; }
+
+/* Reorder shortcut row under the photo list */
+.order-shortcuts{
+  display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+  margin-top:22px; padding-top:18px; border-top:1px solid var(--line);
+}
+.order-shortcuts .order-note{
+  font-size:12.5px; color:var(--muted); line-height:1.5; flex:1 1 260px;
+}
+
+/* Position dialog */
+.order-modal .order-current{ font-size:14px; color:var(--text); margin:0 0 6px; line-height:1.5; }
+.order-modal .order-current b{ color:var(--accent-light); }
+.order-modal .order-chip{
+  display:inline-block; margin:0 0 14px; padding:2px 8px; border-radius:999px;
+  font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--accent-light); background:var(--accent-soft); border:1px solid var(--line-2);
+}
+
 
 /* Admin Stats */
 .admin-stats{
@@ -746,8 +791,28 @@ select option{ background:var(--bg-2); color:var(--text); }
 }
 .modal-content{
   background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-  padding:30px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto;
+  padding:30px;  max-width:480px; width:100%; max-height:90vh; overflow-y:auto;
 }
+
+/* ---------- order editor modal ---------- */
+.order-modal{ max-width:380px; }
+.order-modal .modal-content{ padding:22px; }
+.order-modal .order-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.order-modal .order-head h3{ font-family:var(--font-head); font-weight:700; font-size:18px; }
+.order-modal .order-chip{ font-size:12px; color:var(--muted); }
+.order-modal .order-current{ font-size:13px; color:var(--muted); margin-bottom:16px; }
+.order-modal .order-current b{ color:var(--text); }
+.order-modal .field{ margin-bottom:18px; }
+.order-modal .field label{ font-size:13px; font-weight:600; margin-bottom:7px; display:block; }
+.order-modal .field input{
+  width:110px; background:var(--bg-2); border:1px solid var(--line-2); border-radius:10px;
+  color:var(--text); padding:11px 12px; font-size:15px; transition:border-color .2s;
+}
+.order-modal .field input:focus{ outline:none; border-color:var(--accent-light); }
+.order-modal .hint{ font-size:12px; color:var(--muted); margin:-6px 0 0; }
+.order-modal .helper-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.order-modal .btn{ flex:1; min-width:74px; }
+
 .modal-header{
   display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;
 }

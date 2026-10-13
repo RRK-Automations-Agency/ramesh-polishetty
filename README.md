@@ -90,6 +90,23 @@ The generated file looks like this (`config/config.example.json` is the template
 }
 ```
 
+## 🖼️ Photo Order
+
+The admin panel controls the order photos appear in on the website. Every photo
+has a numeric `display_order` (migration `20240101000004_add_display_order.sql`)
+and the gallery pages read that column, then fall back to newest-first for rows
+still on the default `0`.
+
+From `/admin.html` the admin can:
+
+- **drag a card** onto another to drop it at that position,
+- tap **▲ ▼** on a card to nudge it one place,
+- tap the **#number** badge to type an exact position,
+- or use **Newest first / Oldest first** to reset the whole list.
+
+The list is renumbered 1…N after every change, so the numbers never drift, and
+the chosen order is what the matching gallery page shows.
+
 ## 🛡️ Security
 
 - **The Supabase anon key is public by design.** It ships to the browser in

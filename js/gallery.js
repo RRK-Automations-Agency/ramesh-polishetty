@@ -2,10 +2,36 @@
    RAMESH POLISETTY — gallery + lightbox
    Reads photos from Supabase, with a local cache fallback.
    Loaded on pages that contain a [data-gallery] element.
+
+   Photo order: every row carries a numeric `display_order` that the
+   admin panel writes (see js/admin.js). Smaller numbers come first;
+   rows that still carry the default 0 keep their old created-at
+   ordering. When the column is missing (migration not applied yet)
+   the whole thing degrades to created-at order instead of failing.
    ============================================================ */
 
 /* Local cache key for photo items */
 const GalleryData = {
+
+  /* Map a raw DB row onto the shape every caller expects, including any
+     new columns the admin tools add (e.g. display_order). Keep the
+     normalisation in one place so new fields are handled uniformly across
+     the admin list, the gallery and the lightbox. */
+  _normalizeItem(row) {
+    return {
+      id:        row.id,
+      src:       row.image_url,
+      cat:       row.category || '',
+      label:     row.label || '',
+      note:      row.note || '',
+      file_name: row.file_name || null,
+      order:     (row.display_order != null) ? Number(row.display_order) : 0,
+      // Kept so the admin panel can put everything back into upload-date
+      // order after a lot of manual dragging.
+      created_at: row.created_at || null,
+    };
+  },
+
   KEY: "rp_gallery_items",
 
   /* Default placeholder cards so the gallery is never empty.
@@ -21,6 +47,15 @@ const GalleryData = {
     { id: "d8", src: "", cat: "clients", label: "Client — Goal achieved", note: "" }
   ],
 
+  /* Photos are ordered by display_order first, then newest first, and the
+     sort is redone client side so an installed-without-the-column database
+     still ends up in a sensible sequence. Array#sort is stable, so rows
+     that share the same order value keep the created-at order the database
+     returned. */
+  _sortItems(items) {
+    return items.slice().sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+  },
+
   async load() {
     // Load from Supabase cloud storage
     if (window.getSupabaseClient && window.getSupabaseClient()) {
@@ -29,40 +64,48 @@ const GalleryData = {
         const { data, error } = await client
           .from(window.SUPABASE_CONFIG.tableName)
           .select('*')
+          .order('display_order', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
-        
+
         if (error) {
+          // If the migration has not been applied yet, display_order is
+          // missing. Fall back to created_at order instead of surfacing an
+          // error — the gallery still works, just without a custom order.
+          const isMissingColumn = /column "display_order" does not exist/i.test(error.message || '');
+          if (isMissingColumn) {
+            console.warn('display_order not available — falling back to created_at order.');
+            const { data: fb, error: fbErr } = await client
+              .from(window.SUPABASE_CONFIG.tableName)
+              .select('*')
+              .order('created_at', { ascending: false });
+            if (!fbErr && fb) return fb.map((row) => this._normalizeItem(row));
+            if (fbErr) console.error('Supabase load failed:', fbErr.message || fbErr);
+            return this.DEFAULTS.map((d) => ({ ...d }));
+          }
+
           console.warn('Supabase query error (table may not exist yet):', error.message);
           return this.DEFAULTS.map((d) => ({ ...d }));
         }
-        
-        if (data && data.length > 0) {
-          return data.map(item => ({
-            id: item.id,
-            src: item.image_url,
-            cat: item.category,
-            label: item.label,
-            note: item.note || '',
-            file_name: item.file_name || null
-          }));
-        }
-        
-        // Table exists but empty
-        return [];
+
+        // Table exists but is empty — the gallery shows its "nothing here
+        // yet" note rather than fake placeholder cards.
+        if (!data) return [];
+        return this._sortItems(data.map((row) => this._normalizeItem(row)));
       } catch (e) {
         console.error('Supabase load failed:', e.message || e);
         return this.DEFAULTS.map((d) => ({ ...d }));
       }
     }
-    
+
     // Supabase not configured
     console.warn('Supabase not configured — cannot load photos.');
     return this.DEFAULTS.map((d) => ({ ...d }));
   },
 
-  async save(items) {
-    // Photos are managed via Supabase directly
-    // This method is kept for compatibility but is no longer the primary storage
+  /* Photos are managed via Supabase directly.
+     This method is kept for compatibility but is no longer the primary
+     storage — the gallery always re-reads from Supabase on load. */
+  save(items) {
     try { localStorage.setItem(this.KEY, JSON.stringify(items)); return true; }
     catch (e) { return false; }
   },
@@ -76,36 +119,40 @@ const GalleryData = {
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
       return { error: 'Supabase not configured' };
     }
-    
+
     const client = window.getSupabaseClient();
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${file.name.split('.').pop()}`;
-    
+
     // Upload to storage
     const { data: uploadData, error: uploadError } = await client.storage
       .from(window.SUPABASE_CONFIG.bucketName)
       .upload(fileName, file);
-    
+
     if (uploadError) return { error: uploadError.message };
-    
+
     // Get public URL
     const { data: urlData } = client.storage
       .from(window.SUPABASE_CONFIG.bucketName)
       .getPublicUrl(fileName);
-    
-    // Save metadata to database
+
+    // Save metadata to database. display_order is written only when the
+    // caller supplied one, so an un-migrated database still accepts the row.
+    const row = {
+      image_url: urlData.publicUrl,
+      category: metadata.cat,
+      label: metadata.label,
+      note: metadata.note,
+      file_name: fileName
+    };
+    if (metadata.order != null) row.display_order = metadata.order;
+
     const { data: dbData, error: dbError } = await client
       .from(window.SUPABASE_CONFIG.tableName)
-      .insert({
-        image_url: urlData.publicUrl,
-        category: metadata.cat,
-        label: metadata.label,
-        note: metadata.note,
-        file_name: fileName
-      })
+      .insert(row)
       .select();
-    
+
     if (dbError) return { error: dbError.message };
-    
+
     return { data: dbData[0] };
   },
 
@@ -114,9 +161,9 @@ const GalleryData = {
     if (!window.getSupabaseClient || !window.getSupabaseClient()) {
       return { error: 'Supabase not configured' };
     }
-    
+
     const client = window.getSupabaseClient();
-    
+
     // Delete from storage if file_name exists
     if (item.file_name) {
       const { error: storageError } = await client.storage
@@ -124,13 +171,13 @@ const GalleryData = {
         .remove([item.file_name]);
       if (storageError) console.warn('Storage delete warning:', storageError.message);
     }
-    
+
     // Delete from database
     const { error: dbError } = await client
       .from(window.SUPABASE_CONFIG.tableName)
       .delete()
       .eq('id', item.id);
-    
+
     if (dbError) return { error: dbError.message };
     return { success: true };
   }
@@ -246,10 +293,10 @@ async function initGallery(container) {
   container.dataset.done = "1";
 
   const max = parseInt(container.dataset.max || "", 10);
-  
+
   // Show loading state
   container.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">Loading photos...</p>';
-  
+
   const all = await GalleryData.load();
   const items = isNaN(max) ? all : all.slice(0, max);
 

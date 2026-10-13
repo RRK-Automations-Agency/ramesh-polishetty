@@ -38,7 +38,9 @@ This website uses Supabase for cloud photo storage. Photos can be managed direct
 ### 6. Create Database Table
 
 > **Prefer the migrations.** `supabase/migrations/` is the source of truth: run
-> `20240101000000` → `20240101000001` → `20240101000002` → `20240101000003` in
+> `20240101000000` → `20240101000001` → `20240101000002` → `20240101000003` →
+> `20240101000004` (the last one adds `display_order`, the photo ordering the
+> admin panel manages) in
 > filename order in the SQL editor. Migration `...0003` adds the admin allowlist
 > (`public.admins` + `public.is_admin()`) that gates every write to the photos
 > table and the storage bucket; add your admin email to it (section 5 of that

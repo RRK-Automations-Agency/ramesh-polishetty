@@ -89,7 +89,11 @@ After adding env vars:
 ## Step 7: Lock Down Writes (required)
 
 Run the migrations in `supabase/migrations/` **in filename order** in the Supabase
-SQL editor, ending with `20240101000003_secure_rls_admin_only.sql`.
+SQL editor, ending with `20240101000004_add_display_order.sql`.
+
+`20240101000004_add_display_order.sql` adds the `display_order` column the admin
+panel writes when photos are reordered; without it the gallery simply falls back
+to newest-first order, so applying it is safe at any time.
 
 That last migration creates an `admins` allowlist table: gallery photos stay
 publicly readable, but only allowlisted accounts may upload, edit or delete.

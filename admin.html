@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v10" />
+<link rel="stylesheet" href="css/styles.css?v11" />
 </head>
 <body data-page="admin">
 
@@ -177,7 +177,7 @@
     <!-- Saved Photos -->
     <div class="list-bar">
       <h3 class="admin-list-heading">Photos on the website <span id="list-count" class="count-pill">—</span></h3>
-      <span class="list-tip"><b>✎</b> edit &nbsp;·&nbsp; <b>✕</b> delete</span>
+      <span class="list-tip"><b>✎</b> edit &nbsp;·&nbsp; <b>✕</b> delete &nbsp;·&nbsp; <b>▲▼</b> move</span>
     </div>
     <div class="admin-list" id="admin-list"></div>
   </div>
@@ -210,6 +210,11 @@
           <label for="edit-note">Extra detail (optional)</label>
           <input id="edit-note" type="text" />
         </div>
+        <div class="field">
+          <label for="edit-order">Position on the website</label>
+          <input id="edit-order" type="number" min="1" step="1" />
+          <p class="hint" style="margin:8px 0 0;">Position 1 appears first. Change the number to move the photo; leave it alone to keep it where it is.</p>
+        </div>
         <p id="edit-status" class="upload-status"></p>
         <div class="modal-actions">
           <button type="button" class="btn btn-ghost" id="edit-cancel">Cancel</button>
@@ -219,13 +224,44 @@
     </div>
   </div>
 
+  <!-- Order editor: set a photo to an exact position on the website. -->
+  <div id="order-modal" class="modal order-modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header order-head">
+        <h3>Reorder photo</h3>
+        <button class="modal-close" id="order-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="order-form">
+        <input type="hidden" id="order-id" />
+        <p class="order-current">Move <b id="order-label">"…"</b> — it is currently at position <b id="order-current">0</b>.</p>
+        <p id="order-cat" class="order-chip"></p>
+        <div class="field">
+          <label for="order-input">New position</label>
+          <input id="order-input" type="number" min="1" step="1" value="1" autocomplete="off" />
+        </div>
+        <p class="hint">The website shows photos starting from position 1. Type any number, then press Reorder. Smaller numbers come first.</p>
+        <p id="order-status" class="upload-status"></p>
+        <div class="order-actions modal-actions" style="flex-direction:column; gap:10px;">
+          <button type="button" class="btn btn-ghost" id="order-cancel">Cancel</button>
+          <button type="submit" class="btn btn-accent" id="order-save">Reorder</button>
+        </div>
+      </form>
+    </div>
+  </div>  <!-- Reorder shortcuts, kept below the list so they are never clicked by
+       accident while editing a photo. -->
+  <div class="order-shortcuts">
+    <button id="order-newest" class="btn btn-ghost btn-sm">Newest first</button>
+    <button id="order-oldest" class="btn btn-ghost btn-sm">Oldest first</button>
+    <span class="order-note">Drag any photo card to move it, tap ▲ ▼ to nudge it one place, or tap the <b>#number</b> on a card to set an exact position. Photos appear on the website in the order shown here — changes save as you go.</span>
+  </div>
+
 </div>
 
-<script src="js/supabase-config.js?v10"></script>
+<script src="js/supabase-config.js?v11"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/auth.js?v10"></script>
-<script src="js/gallery.js?v10"></script>
-<script src="js/admin.js?v10"></script>
-<script src="js/admin-boot.js?v10"></script>
+<script src="js/auth.js?v11"></script>
+<script src="js/gallery.js?v11"></script>
+<script src="js/admin.js?v11"></script>
+<script src="js/admin-boot.js?v11"></script>
 </body>
 </html>
