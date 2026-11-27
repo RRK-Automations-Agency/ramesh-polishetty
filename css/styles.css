@@ -485,35 +485,59 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
 /* ============================================================
    TESTIMONIALS
    ============================================================ */
-.quote{ display:flex; flex-direction:column; gap:14px; }
+.testimonials-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:24px;
+}
+.quote{ display:flex; flex-direction:column; gap:16px; }
 .quote .quote-photo{
   width:100%;
-  aspect-ratio:1/1;
+  height:380px;
   border-radius:calc(var(--radius) - 4px);
   overflow:hidden;
-  background:var(--card-hi);
+  background:#09090f;
   border:1px solid var(--line-2);
   position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+}
+.quote .quote-photo-bg{
+  position:absolute;
+  inset:-20px;
+  background-size:cover;
+  background-position:center;
+  filter:blur(28px);
+  opacity:0.35;
+  transform:scale(1.15);
+  pointer-events:none;
 }
 .quote .quote-photo img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:center top;
+  position:relative;
+  z-index:2;
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;
   display:block;
-  transition:transform .35s ease;
+  border-radius:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+  transition:transform .3s ease;
 }
 .card.quote:hover .quote-photo img{
-  transform:scale(1.04);
+  transform:scale(1.02);
 }
 .quote .stars{ color:var(--accent-light); letter-spacing:3px; font-size:15px; }
 .quote p{ font-size:14.5px; line-height:1.6; font-style:italic; color:var(--text); flex:1; }
 .quote .who{
   display:flex;
   align-items:center;
-  gap:12px;
+  justify-content:space-between;
   margin-top:auto;
-  padding-top:12px;
+  padding-top:14px;
   border-top:1px solid var(--line-2);
 }
 .quote .who .av{
@@ -521,8 +545,8 @@ header.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,.55); }
   background:var(--accent-soft); border:1px solid var(--accent-light);
   display:grid; place-items:center; font-weight:700; color:var(--accent-light); font-size:15px;
 }
-.quote .who b{ display:block; font-size:14.5px; color:var(--text); }
-.quote .who span{ display:block; font-size:12px; color:var(--accent-light); margin-top:2px; font-weight:500; }
+.quote .who b{ display:block; font-size:15px; color:var(--text); }
+.quote .who span{ display:block; font-size:12.5px; color:var(--accent-light); margin-top:2px; font-weight:500; }
 
 /* ============================================================
    CONTACT
@@ -872,6 +896,16 @@ footer{ border-top:1px solid var(--line); background:var(--bg-2); padding:46px 0
   .section.alt{ padding:54px 0; }
 }
 
+@media (max-width:860px){
+  .testimonials-grid{
+    grid-template-columns:1fr;
+    gap:20px;
+  }
+  .quote .quote-photo{
+    height:320px;
+  }
+}
+
 /* ---------- mobile polish ----------------------------------
    Inputs below 16px make iOS Safari zoom the whole page on focus,
    and small tap targets are hard to hit with a thumb. */
@@ -881,8 +915,8 @@ footer{ border-top:1px solid var(--line); background:var(--bg-2); padding:46px 0
   .btn:not(.btn-sm){ padding-top:14px; padding-bottom:14px; }
   .card .link{ padding:7px 0; }
   .filters{ margin-bottom:22px; }
-  .card.quote{ padding:20px; gap:12px; }
-  .quote .quote-photo{ max-height:280px; }
+  .card.quote{ padding:18px; gap:14px; }
+  .quote .quote-photo{ height:280px; padding:8px; }
   .quote p{ font-size:14px; }
 }
 
