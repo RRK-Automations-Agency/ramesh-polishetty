@@ -12,7 +12,7 @@ so the profile and the site must not disagree):
 | Website | https://www.coachramesh.com/ |
 | Public telephone | +91 9963526973 |
 | WhatsApp | +91 9963526973 (`https://wa.me/919963526973`) |
-| Primary area | Medchal, Hyderabad, Telangana, India |
+| Primary area | Hyderabad, Telangana, India |
 | Services | In-person coaching · Online coaching |
 | Business model | Service-area business — **keep the address hidden** |
 | Street address | **Not published anywhere. Do not add one.** |
@@ -22,7 +22,7 @@ so the profile and the site must not disagree):
 
 ## 1. First: does a profile already exist?
 
-1. Search Google Maps for `Ramesh Polisetty`, then for `personal trainer Medchal`.
+1. Search Google Maps for `Ramesh Polisetty`, then for `personal trainer Hyderabad`.
 2. Also check `https://business.google.com` — if a profile exists, it appears under the
    signed-in Google account, and Google shows a "Claim this business"/"Own this profile"
    option on the Maps listing.
@@ -38,12 +38,12 @@ so the profile and the site must not disagree):
 
 1. https://business.google.com → *Add business* → enter the real name:
    **`Ramesh Polisetty`**.
-   - Do **not** add keywords to the name ("Best Personal Trainer in Medchal…"). A
+   - Do **not** add keywords to the name ("Best Personal Trainer in Hyderabad…"). A
      keyword-stuffed name is the most common cause of suspension.
 2. Business type: **Service area business** ("I deliver goods and services to my
    customers"). Choose this, not storefront, unless you genuinely serve clients at a
    fixed staffed location (see step 6).
-3. Service area: **Medchal** plus the areas you actually coach in, and the wider
+3. Service area: **Hyderabad** plus the areas you actually coach in, and the wider
    Hyderabad area you genuinely cover. Google allows a limited number — list only areas
    you would really travel to. Do not add the whole country; "online coaching worldwide"
    is not a service area.
@@ -64,7 +64,7 @@ so the profile and the site must not disagree):
    No prices unless you decide to publish them.
 9. Description (750 chars max): reuse the wording already on the site. A safe opening:
    *"Ramesh Polisetty is a personal trainer and body transformation coach working with
-   clients in person around Medchal and Hyderabad, and online worldwide. 1-on-1 coaching,
+   clients in person around Hyderabad, and online worldwide. 1-on-1 coaching,
    structured training, nutrition guidance and regular check-ins."*
    Do not add years of experience, client counts, credentials, awards or guarantees that
    are not confirmed.

@@ -11,7 +11,7 @@ missing the site says nothing rather than guessing.
 | Brief | Value | Used as |
 |---|---|---|
 | Professional | Ramesh Polisetty | name, `Person`, footer |
-| Primary area | Medchal, Hyderabad, Telangana, India | service-area copy, `areaServed` |
+| Primary area | Hyderabad, Telangana, India | service-area copy, `areaServed` |
 | Services | in-person + online coaching | copy, `Service`, `OfferCatalog` |
 | Model | service-area business, no public address | no address anywhere; said so on the contact page |
 | Phone | +91 9963526973 | visible text, `tel:+919963526973` |
@@ -76,19 +76,19 @@ Two defects, both real, both fixed:
 
 | Page | Added |
 |---|---|
-| `index.html` | title/description/OG now name Medchal, Hyderabad; `areaServed` = Hyderabad, Medchal, Telangana, India, Online; a "Where Ramesh coaches" service-area section that keeps in-person and online distinct; hero copy names the area |
-| `contact.html` | two information blocks (in-person around Medchal & Hyderabad · online worldwide), a service-area paragraph stating there is **no public address**, phone/WhatsApp retained |
+| `index.html` | title/description/OG now name Hyderabad; `areaServed` = Hyderabad, Hyderabad, Telangana, India, Online; a "Where Ramesh coaches" service-area section that keeps in-person and online distinct; hero copy names the area |
+| `contact.html` | two information blocks (in-person around Hyderabad & Hyderabad · online worldwide), a service-area paragraph stating there is **no public address**, phone/WhatsApp retained |
 | `about.html` | service-area sentence + description, breadcrumb trail + `BreadcrumbList` |
 | `programs.html`, `nutrition.html`, `powerlifting.html` | service-area sentence, descriptive internal links, `Service` markup with `provider` + `areaServed` |
 | `gallery.html`, `transformation.html`, `achievements.html`, `clients.html` | service-area sentence, descriptive internal links, breadcrumb trail |
 | `404.html` | no change beyond Phase 2's head; still `noindex, nofollow` and out of the sitemap |
-| all 10 public pages | footer now prints "In-person coaching in Medchal, Hyderabad · Online coaching worldwide · +91 9963526973" — one NAP line, same on every page, for the Google profile to match |
+| all 10 public pages | footer now prints "In-person coaching in Hyderabad · Online coaching worldwide · +91 9963526973" — one NAP line, same on every page, for the Google profile to match |
 
 Titles: only the homepage was rewritten for locality (the one place it makes the page more
 accurate). Every other title kept its intent. City names appear in exactly **one** heading
 site-wide (the homepage section), and in a sentence — not in every H1/H2.
 
-Not created, deliberately: locality landing pages for Medchal/other suburbs (no evidence of
+Not created, deliberately: locality landing pages for Hyderabad/other suburbs (no evidence of
 real coverage and no unique local content to write), prices, hours, testimonials wording,
 client statistics, certifications, guarantees.
 
@@ -158,7 +158,7 @@ Person + WebSite + ProfessionalService.
 
 **Contact form (both viewports):** empty name/phone → alert, no navigation; filled →
 `https://wa.me/919963526973?text=…`, and the decoded message is exactly
-`Hi Ramesh, I'm Priya S.\nGoal: Fat loss\nPhone: +91 90000 00000\nNote: Evenings only, near Medchal`,
+`Hi Ramesh, I'm Priya S.\nGoal: Fat loss\nPhone: +91 90000 00000\nNote: Evenings only, near Hyderabad`,
 with no raw spaces in the URL. Lead path works end-to-end with no network call of its own.
 
 **Admin / Supabase (read-only probes, no write attempted to any real row):**
@@ -242,7 +242,7 @@ until confirmed.
    contact page says so explicitly).
 2. Whether any fixed, staffed, signposted location serves clients — that changes the profile
    type and whether `PostalAddress` + map belong in the markup.
-3. Confirmation that Medchal is the primary locality and which neighbouring areas are really
+3. Confirmation that Hyderabad is the primary locality and which neighbouring areas are really
    served (service area wording, and any future locality page).
 4. Official social profile URLs (nothing was added to `sameAs`).
 5. GBP: does a profile already exist, and who controls it.
