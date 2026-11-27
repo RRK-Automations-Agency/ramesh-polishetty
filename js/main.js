@@ -17,18 +17,33 @@ function isRealWhatsAppNumber(value) {
   return /^\d{10,15}$/.test(digits) && !/0{6,}/.test(digits);
 }
 
+/* Take the numbers out of a config.json payload. Kept separate so the shared
+   loader (js/supabase-config.js) and the direct fetch below feed the same
+   checks. */
+function applySiteConfig(data) {
+  if (!data) return;
+  if (isRealWhatsAppNumber(data.WHATSAPP_NUMBER)) {
+    SITE_CONFIG.whatsappNumber = String(data.WHATSAPP_NUMBER).replace(/\D/g, "");
+  } else if (data.WHATSAPP_NUMBER) {
+    console.warn('Ignoring placeholder WHATSAPP_NUMBER (set the real one in the deployment env):', data.WHATSAPP_NUMBER);
+  }
+  SITE_CONFIG.phoneNumber = data.PHONE_NUMBER || SITE_CONFIG.phoneNumber;
+}
+
 async function loadSiteConfig() {
   try {
-    const res = await fetch('/config/config.json');
-    if (res.ok) {
-      const data = await res.json();
-      if (isRealWhatsAppNumber(data.WHATSAPP_NUMBER)) {
-        SITE_CONFIG.whatsappNumber = String(data.WHATSAPP_NUMBER).replace(/\D/g, "");
-      } else if (data.WHATSAPP_NUMBER) {
-        console.warn('Ignoring placeholder WHATSAPP_NUMBER (set the real one in the deployment env):', data.WHATSAPP_NUMBER);
-      }
-      SITE_CONFIG.phoneNumber = data.PHONE_NUMBER || SITE_CONFIG.phoneNumber;
+    // Pages that load js/supabase-config.js already fetch this same file for
+    // the Supabase URL and key (and that fetch is served no-store, so a second
+    // one is a full extra round trip). Reuse it when it is available.
+    if (typeof window.loadConfig === 'function') {
+      await window.loadConfig();
+      const shared = window.SUPABASE_CONFIG || {};
+      applySiteConfig({ WHATSAPP_NUMBER: shared.whatsappNumber, PHONE_NUMBER: shared.phoneNumber });
+      return;
     }
+
+    const res = await fetch('/config/config.json');
+    if (res.ok) applySiteConfig(await res.json());
   } catch (e) {
     // config.json not found, use defaults
   }
@@ -37,7 +52,9 @@ async function loadSiteConfig() {
 /* ---------- navbar shadow on scroll ---------- */
 const header = $("#site-header");
 if (header) {
-  window.addEventListener("scroll", () => header.classList.toggle("scrolled", window.scrollY > 10));
+  // Passive: this listener never calls preventDefault(), and saying so lets the
+  // browser start scrolling without waiting on the main thread.
+  window.addEventListener("scroll", () => header.classList.toggle("scrolled", window.scrollY > 10), { passive: true });
 }
 
 /* ---------- mobile menu ---------- */

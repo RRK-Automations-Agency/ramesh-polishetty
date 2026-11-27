@@ -364,8 +364,12 @@ async function initGallery(container) {
 
   const max = parseInt(container.dataset.max || "", 10);
 
-  // Show loading state
-  container.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">Loading photos...</p>';
+  // Show a loading state — unless the build already prerendered the cards
+  // (scripts/prerender-gallery.js), in which case the real content is already
+  // on screen and replacing it with "Loading photos..." would be a step back.
+  if (!container.querySelector('.gitem')) {
+    container.innerHTML = '<p class="note-hint" style="grid-column:1/-1;">Loading photos...</p>';
+  }
 
   const all = await GalleryData.load();
   const items = isNaN(max) ? all : all.slice(0, max);

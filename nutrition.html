@@ -15,11 +15,45 @@
 <meta name="twitter:description" content="Nutrition plan types — fat loss, muscle building and balanced lifestyle eating." />
 <meta name="twitter:image" content="https://www.coachramesh.com/photos/hero-1.jpeg" />
 <link rel="canonical" href="https://www.coachramesh.com/nutrition.html" />
+<!-- BreadcrumbList mirrors the visible trail at the top of the page. The
+     Service node describes the three plan types shown on this page - no price,
+     area or availability is asserted because the page states none. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.coachramesh.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Nutrition", "item": "https://www.coachramesh.com/nutrition.html" }
+      ]
+    },
+    {
+      "@type": "Service",
+      "name": "Nutrition and meal-plan coaching",
+      "serviceType": "Nutrition coaching",
+      "description": "Fat-loss, muscle-building and balanced lifestyle meal plans, built around food the client already eats, with weekly check-ins and adjustments as progress changes.",
+      "url": "https://www.coachramesh.com/nutrition.html",
+      "provider": {
+        "@type": "Person",
+        "@id": "https://www.coachramesh.com/#ramesh",
+        "name": "Ramesh Polisetty",
+        "url": "https://www.coachramesh.com/"
+      },
+      "areaServed": [
+        { "@type": "City", "name": "Hyderabad" },
+        { "@type": "Place", "name": "Medchal, Hyderabad" },
+        { "@type": "AdministrativeArea", "name": "Telangana" },
+        { "@type": "Place", "name": "Online coaching worldwide" }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v15" />
+<link rel="stylesheet" href="css/fonts.css?v16" />
+<link rel="stylesheet" href="css/styles.css?v16" />
 </head>
 <body data-page="nutrition">
 
@@ -44,9 +78,16 @@
 
 <section class="page-hero">
   <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="index.html">Home</a>
+      <i>›</i>
+      <span>Nutrition</span>
+    </nav>
     <div class="eyebrow">Nutrition</div>
     <h1>Fuel the <em>transformation</em></h1>
-    <p>Training is only half the work. These plan types guide what and how you eat — then Ramesh customises the details.</p>
+    <p>Training is only half the work. These plan types guide what and how you eat —
+    then Ramesh customises the details. Nutrition coaching runs alongside in-person
+    training around Medchal and Hyderabad, and online for clients anywhere.</p>
   </div>
 </section>
 
@@ -120,6 +161,45 @@
   </div>
 </section>
 
+<!-- Added in the SEO pass: the page explained three plan types and nothing
+     else, which is thin for a page that has to earn its own place in the
+     index. Every answer is derived from copy already on this page. -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Common questions</div>
+      <h2>Questions about <em>eating plans</em></h2>
+      <p>Short answers to what people ask before starting. Anything else, ask on the <a href="contact.html" class="link">contact page</a>.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal">
+        <h3>Do I have to weigh every meal?</h3>
+        <p>No. You get a simple daily structure of what to eat and roughly how much — no weighing every gram.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Will I have to give up the food I normally eat?</h3>
+        <p>No. Plans are built around the food you already like, with simple local swaps, so the plan is one you can keep following after the first month.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Is nutrition coaching only for fat loss?</h3>
+        <p>No. There are three directions — fat loss, muscle gain and balanced maintenance. The structure changes with the goal; the approach does not.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Can I still eat out or travel?</h3>
+        <p>Yes. Eating out without falling off track is part of the balanced lifestyle plan, and the fat-loss and muscle-gain plans are adjusted whenever your week changes.</p>
+      </div>
+      <div class="card reveal">
+        <h3>How often does the plan change?</h3>
+        <p>Weekly check-ins keep it honest: you share photos or notes and the plan is adjusted from what they show.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Do I need the training side as well?</h3>
+        <p>Nutrition works alongside personal training, but it does not have to start at the same time. The <a href="programs.html" class="link">programs page</a> explains how the two fit together.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="foot">
@@ -137,11 +217,12 @@
       </div>
     </div>
     <div class="copy">
-      © <span id="year"></span> <b>Ramesh Polisetty</b> · Complete Fitness Coach & Body Transformation Architect
+      © <span id="year"></span> <b>Ramesh Polisetty</b> · Complete Fitness Coach & Body Transformation Architect<br />
+      In-person coaching in Medchal, Hyderabad · Online coaching worldwide · <a href="tel:+919963526973">+91 9963526973</a>
     </div>
   </div>
 </footer>
 
-<script src="js/main.js?v15"></script>
+<script defer src="js/main.js?v16"></script>
 </body>
 </html>

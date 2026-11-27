@@ -4,7 +4,7 @@
   "private": true,
   "description": "Ramesh Polisetty — Fitness Coach & Body Transformation Architect",
   "scripts": {
-    "build": "node scripts/build-config.js",
+    "build": "node scripts/build-config.js && node scripts/prerender-gallery.js",
     "dev": "echo 'Open index.html in browser'"
   }
 }

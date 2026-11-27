@@ -15,11 +15,45 @@
 <meta name="twitter:description" content="Powerlifting training and competition photos." />
 <meta name="twitter:image" content="https://www.coachramesh.com/photos/hero-1.jpeg" />
 <link rel="canonical" href="https://www.coachramesh.com/powerlifting.html" />
+<!-- BreadcrumbList mirrors the visible trail at the top of the page. The
+     Service node describes what this page actually shows - no meet results,
+     totals or federation is asserted because none is published on the site. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.coachramesh.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Powerlifting", "item": "https://www.coachramesh.com/powerlifting.html" }
+      ]
+    },
+    {
+      "@type": "Service",
+      "name": "Powerlifting and strength coaching",
+      "serviceType": "Strength and powerlifting coaching",
+      "description": "Powerlifting sessions, competition moments and strength milestones, coached by Ramesh Polisetty.",
+      "url": "https://www.coachramesh.com/powerlifting.html",
+      "provider": {
+        "@type": "Person",
+        "@id": "https://www.coachramesh.com/#ramesh",
+        "name": "Ramesh Polisetty",
+        "url": "https://www.coachramesh.com/"
+      },
+      "areaServed": [
+        { "@type": "City", "name": "Hyderabad" },
+        { "@type": "Place", "name": "Medchal, Hyderabad" },
+        { "@type": "AdministrativeArea", "name": "Telangana" },
+        { "@type": "Place", "name": "Online coaching worldwide" }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v15" />
+<link rel="stylesheet" href="css/fonts.css?v16" />
+<link rel="stylesheet" href="css/styles.css?v16" />
 </head>
 <body data-page="powerlifting">
 
@@ -44,9 +78,16 @@
 
 <section class="page-hero">
   <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="index.html">Home</a>
+      <i>›</i>
+      <span>Powerlifting</span>
+    </nav>
     <div class="eyebrow">Powerlifting</div>
     <h1>Strength <em>Training</em></h1>
-    <p>Powerlifting sessions, competition moments, and strength milestones. Building real, functional power.</p>
+    <p>Powerlifting sessions, competition moments, and strength milestones. Building
+    real, functional power — coached in person around Medchal and Hyderabad, or
+    online with programming and check-ins.</p>
   </div>
 </section>
 
@@ -55,7 +96,27 @@
     <div class="filters" id="powerlifting-filters">
       <button class="filter active" data-filter="powerlifting">Powerlifting</button>
     </div>
-    <div class="gallery" data-gallery data-filters="#powerlifting-filters"></div>
+    <!-- Written at build time by scripts/prerender-gallery.js; js/gallery.js
+         re-renders the same rows on top once it has fetched Supabase. -->
+    <div class="gallery" data-gallery data-filters="#powerlifting-filters">
+      <!-- prerender:start -->
+        <div class="gitem" style="--ar:3/4">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791830586649-83sc1yeym.jpg" alt="Powerlifting" loading="lazy" decoding="async" />
+          <span class="cat">powerlifting</span>
+          <div class="cap">Powerlifting</div>
+        </div>
+        <div class="gitem" style="--ar:4/5">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791830207521-7fcoufs0x.jpg" alt="Powerlifting" loading="lazy" decoding="async" />
+          <span class="cat">powerlifting</span>
+          <div class="cap">Powerlifting</div>
+        </div>
+        <div class="gitem" style="--ar:1/1">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791830206570-irdwawvab.jpg" alt="Powerlifting" loading="lazy" decoding="async" />
+          <span class="cat">powerlifting</span>
+          <div class="cap">Powerlifting</div>
+        </div>
+<!-- prerender:end -->
+    </div>
     <p class="note-hint">
       Strength built over time through disciplined, consistent training.
     </p>
@@ -67,6 +128,7 @@
     <div class="section-head center reveal" style="margin-bottom:24px;">
       <div class="eyebrow">Build Strength</div>
       <h2>Ready to get <em>stronger?</em></h2>
+      <p>Strength and conditioning is one of the coaching paths on the <a href="programs.html" class="link">programs page</a>, competition milestones are collected on the <a href="achievements.html" class="link">achievements page</a>, and the nutrition side is on the <a href="nutrition.html" class="link">nutrition page</a>.</p>
     </div>
     <div class="reveal">
       <a href="contact.html" class="btn btn-accent">Start your journey</a>
@@ -91,14 +153,15 @@
       </div>
     </div>
     <div class="copy">
-      © <span id="year"></span> <b>Ramesh Polisetty</b> · Complete Fitness Coach & Body Transformation Architect
+      © <span id="year"></span> <b>Ramesh Polisetty</b> · Complete Fitness Coach & Body Transformation Architect<br />
+      In-person coaching in Medchal, Hyderabad · Online coaching worldwide · <a href="tel:+919963526973">+91 9963526973</a>
     </div>
   </div>
 </footer>
 
-<script src="js/supabase-config.js?v15"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/main.js?v15"></script>
-<script src="js/gallery.js?v15"></script>
+<script defer src="js/supabase-config.js?v16"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="js/main.js?v16"></script>
+<script defer src="js/gallery.js?v16"></script>
 </body>
 </html>

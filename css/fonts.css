@@ -1,0 +1,65 @@
+/* ============================================================
+   RAMESH POLISETTY — self-hosted webfonts
+   Loaded before styles.css so the browser can start the font
+   requests immediately.
+
+   Why this file exists: the pages used to pull the same two
+   families from fonts.googleapis.com, which meant two extra
+   origins (DNS + TCP + TLS) and a third-party stylesheet on the
+   critical path, all before anything could be painted.
+
+   Files in /fonts are the latin subsets exactly as Google Fonts
+   served them (see fonts/README.txt for the source URLs and the
+   date they were fetched), served same-origin and cached
+   immutably by vercel.json. Oswald ships as a single variable
+   font file covering 400–700; Poppins is four static weights.
+   Rendering is unchanged — the same files, weights, unicode
+   ranges and font-display behaviour as the Google stylesheet.
+   ============================================================ */
+
+/* Oswald 400–700 — one variable file, exactly what Google served
+   for all four requested weights (the four URLs were identical). */
+@font-face{
+  font-family:'Oswald';
+  font-style:normal;
+  font-weight:400 700;
+  font-display:swap;
+  src:url('../fonts/oswald-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face{
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('../fonts/poppins-400.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face{
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:500;
+  font-display:swap;
+  src:url('../fonts/poppins-500.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face{
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:600;
+  font-display:swap;
+  src:url('../fonts/poppins-600.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face{
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src:url('../fonts/poppins-700.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

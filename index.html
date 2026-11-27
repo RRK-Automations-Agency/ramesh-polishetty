@@ -3,23 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Personal Trainer & Fitness Coach — Ramesh Polisetty</title>
-<meta name="description" content="Personal training with Ramesh Polisetty — 1-on-1 coaching, body transformations, strength training and nutrition plans built around your goal." />
-<meta property="og:title" content="Personal Trainer & Fitness Coach — Ramesh Polisetty" />
-<meta property="og:description" content="Personal training, body transformations, strength training and nutrition coaching. No shortcuts. No fads. Structured, honest training." />
+<title>Personal Trainer in Medchal, Hyderabad — Ramesh Polisetty</title>
+<meta name="description" content="Personal training with Ramesh Polisetty — 1-on-1 coaching, body transformations, strength training and nutrition plans in Medchal, Hyderabad, or online." />
+<meta property="og:title" content="Personal Trainer in Medchal, Hyderabad — Ramesh Polisetty" />
+<meta property="og:description" content="Personal training, body transformations, strength training and nutrition coaching in Medchal, Hyderabad — in person or online. No shortcuts, no fads." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.coachramesh.com/" />
 <meta property="og:image" content="https://www.coachramesh.com/photos/hero-1.jpeg" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Personal Trainer & Fitness Coach — Ramesh Polisetty" />
+<meta name="twitter:title" content="Personal Trainer in Medchal, Hyderabad — Ramesh Polisetty" />
 <meta name="twitter:description" content="Personal training, body transformations, strength training and nutrition coaching." />
 <meta name="twitter:image" content="https://www.coachramesh.com/photos/hero-1.jpeg" />
 <link rel="canonical" href="https://www.coachramesh.com/" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23000000'/><rect width='64' height='8' fill='%231E3A8A'/><text x='32' y='42' font-family='Arial' font-size='26' font-weight='900' fill='%23FFFFFF' text-anchor='middle'>RP</text></svg>" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/styles.css?v15" />
+<link rel="stylesheet" href="css/fonts.css?v16" />
+<link rel="stylesheet" href="css/styles.css?v16" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -29,7 +27,7 @@
       "@id": "https://www.coachramesh.com/#ramesh",
       "name": "Ramesh Polisetty",
       "jobTitle": "Personal Trainer & Fitness Coach",
-      "description": "Personal trainer and body transformation coach working with clients in person and online.",
+      "description": "Personal trainer and body transformation coach working with clients in person around Medchal and Hyderabad, and online.",
       "url": "https://www.coachramesh.com/",
       "image": "https://www.coachramesh.com/photos/hero-1.jpeg",
       "telephone": "+919963526973",
@@ -40,13 +38,16 @@
       "@type": "ProfessionalService",
       "@id": "https://www.coachramesh.com/#business",
       "name": "Ramesh Polisetty — Personal Training",
-      "description": "Personal training, body transformation, strength and nutrition coaching, in person and online.",
+      "description": "Personal training, body transformation, strength and nutrition coaching in Medchal, Hyderabad — in person around the city, and online.",
       "url": "https://www.coachramesh.com/",
       "image": "https://www.coachramesh.com/photos/hero-1.jpeg",
       "telephone": "+919963526973",
       "email": "ramesh.polisetty@gmail.com",
       "founder": { "@id": "https://www.coachramesh.com/#ramesh" },
       "areaServed": [
+        { "@type": "City", "name": "Hyderabad" },
+        { "@type": "Place", "name": "Medchal, Hyderabad" },
+        { "@type": "AdministrativeArea", "name": "Telangana" },
         { "@type": "Country", "name": "India" },
         { "@type": "Place", "name": "Online coaching worldwide" }
       ],
@@ -113,9 +114,10 @@
         <span class="line2">Polisetty</span>
       </h1>
       <p class="sub">
-        Personal training built around your body, your schedule and your goal —
-        body transformations, strength training and nutrition coaching, in person
-        or online. No shortcuts. No fads. Structured, honest training.
+        Personal training in Medchal, Hyderabad — built around your body, your
+        schedule and your goal. Body transformations, strength training and
+        nutrition coaching, in person around Hyderabad or online anywhere.
+        No shortcuts. No fads. Structured, honest training.
       </p>
       <div class="hero-ctas">
         <a href="gallery.html" class="btn btn-accent">See Client Transformations</a>
@@ -130,12 +132,29 @@
     </div>
     <div class="hero-art">
       <div class="frame">
-        <img src="photos/hero-1.jpeg" alt="Ramesh Polisetty — personal trainer coaching a client" class="hero-main-img" width="1280" height="960" fetchpriority="high" decoding="async" />
+        <!-- WebP with the original JPEG as the fallback. This image is the LCP
+             element on desktop, so it stays eager and fetchpriority=high — but
+             on a phone it is painted into a 378x503 box, which is why the
+             480/640 wide variants exist (the single 960x1280 JPEG sent 151 KB
+             more than the box needed). No <link rel=preload>: measured on
+             mobile the LCP element is the hero paragraph, not this image. -->
+        <picture>
+          <source type="image/webp" srcset="photos/hero-1-480.webp?v16 480w, photos/hero-1-640.webp?v16 640w, photos/hero-1.webp?v16 960w" sizes="(max-width:900px) 88vw, 42vw" />
+          <img src="photos/hero-1.jpeg?v16" alt="Ramesh Polisetty — personal trainer coaching a client" class="hero-main-img" width="960" height="1280" fetchpriority="high" decoding="async" />
+        </picture>
       </div>
       <div class="ring"></div>
       <div class="hero-tag">Build · Transform · Maintain</div>
       <div class="hero-photos" id="hero-photos">
-        <img src="photos/hero-2.jpeg" alt="Ramesh Polisetty — personal training session" loading="lazy" width="1280" height="720" decoding="async" />
+        <!-- width/height are deliberately left as they were: .hero-photos img
+             sets width:100% but no height, so this height attribute is what
+             sizes the strip (a fixed 720px band that object-fit crops). The
+             file itself is 720x1280. Changing the attribute to the real pixel
+             size makes the strip 560px taller — verified, not theoretical. -->
+        <picture>
+          <source type="image/webp" srcset="photos/hero-2-480.webp?v16 480w, photos/hero-2.webp?v16 720w" sizes="(max-width:900px) 92vw, 44vw" />
+          <img src="photos/hero-2.jpeg?v16" alt="Ramesh Polisetty — personal training session" loading="lazy" width="1280" height="720" decoding="async" />
+        </picture>
       </div>
     </div>
   </div>
@@ -223,6 +242,27 @@
   </div>
 </section>
 
+<!-- ================= SERVICE AREA ================= -->
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Where Ramesh coaches</div>
+      <h2>In person around <em>Medchal and Hyderabad</em> — or online, anywhere</h2>
+      <p>Ramesh Polisetty coaches clients in person around Medchal and the wider
+      Hyderabad area, in Telangana, and coaches online clients wherever they
+      train. It is the same programme either way — assessment first, then
+      structured training, nutrition guidance and regular check-ins — the
+      difference is only how the sessions are delivered.</p>
+      <p>This is a service-area business, so there is no public address to visit:
+      Ramesh comes to the coaching arrangement rather than the other way round.
+      If you are outside Hyderabad, online coaching travels better — the
+      <a href="programs.html" class="link">programs page</a> explains what each
+      path includes, and the <a href="contact.html" class="link">contact page</a>
+      is where to ask which one fits.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ================= RECENT WORK ================= -->
 <section class="section alt">
   <div class="wrap">
@@ -231,7 +271,44 @@
       <h2>A look at the <em>results</em></h2>
       <p>The latest photos Ramesh has shared — transformations, coaching and clients.</p>
     </div>
-    <div class="gallery" data-gallery data-max="6"></div>
+    <!-- The cards between these markers are written at build time by
+         scripts/prerender-gallery.js so search engines and AI crawlers see the
+         photos without running JavaScript. js/gallery.js re-renders over them
+         with the same rows once it has fetched Supabase. -->
+    <div class="gallery" data-gallery data-max="6">
+      <!-- prerender:start -->
+        <div class="gitem" style="--ar:3/4">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791831002878-7cxubqal8.jpg" alt="Achievements" loading="lazy" decoding="async" />
+          <span class="cat">achievements</span>
+          <div class="cap">Achievements</div>
+        </div>
+        <div class="gitem" style="--ar:4/5">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791831003836-7jb07q3t9.jpg" alt="Achievements" loading="lazy" decoding="async" />
+          <span class="cat">achievements</span>
+          <div class="cap">Achievements</div>
+        </div>
+        <div class="gitem" style="--ar:1/1">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791831004713-8xs9aff06.jpg" alt="Achievements" loading="lazy" decoding="async" />
+          <span class="cat">achievements</span>
+          <div class="cap">Achievements</div>
+        </div>
+        <div class="gitem" style="--ar:4/3">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791831005408-ucdfw3wrl.jpg" alt="Achievements" loading="lazy" decoding="async" />
+          <span class="cat">achievements</span>
+          <div class="cap">Achievements</div>
+        </div>
+        <div class="gitem" style="--ar:2/3">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791830574011-iohy7ax52.jpg" alt="Achievements" loading="lazy" decoding="async" />
+          <span class="cat">achievements</span>
+          <div class="cap">Achievements</div>
+        </div>
+        <div class="gitem" style="--ar:1/1">
+          <img src="https://ndsgszwtmwwiecnqpvhh.supabase.co/storage/v1/object/public/photos/1791830586649-83sc1yeym.jpg" alt="Powerlifting" loading="lazy" decoding="async" />
+          <span class="cat">powerlifting</span>
+          <div class="cap">Powerlifting</div>
+        </div>
+<!-- prerender:end -->
+    </div>
     <div class="reveal" style="margin-top:26px;">
       <a href="gallery.html" class="btn btn-ghost">View the full gallery →</a>
     </div>
@@ -286,14 +363,15 @@
     </div>
     <div class="copy">
       © <span id="year"></span> <b>Ramesh Polisetty</b> · Complete Fitness Coach & Body Transformation Architect<br />
+      In-person coaching in Medchal, Hyderabad · Online coaching worldwide · <a href="tel:+919963526973">+91 9963526973</a><br />
       Train honestly. Train consistently. Get real results.
     </div>
   </div>
 </footer>
 
-<script src="js/supabase-config.js?v15"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/main.js?v15"></script>
-<script src="js/gallery.js?v15"></script>
+<script defer src="js/supabase-config.js?v16"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="js/main.js?v16"></script>
+<script defer src="js/gallery.js?v16"></script>
 </body>
 </html>
